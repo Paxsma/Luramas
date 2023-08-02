@@ -2,7 +2,7 @@
 
 This is an **alpha** release of Luramas. This does not mean bugs will not be fixed, they are being fixed.
 If you find any bugs report it in issues. This is a limited release of luramas. Again expect bugs and stuff to be unfinished!
-[TODO list](TODO.text)
+[TODO list](Luramas\TODO.text)
 
 # Luramas
 ![Icon](Icon.png)
