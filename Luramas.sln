@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32901.215
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Luramas", "Luramas\Luramas.vcxproj", "{F46C2BC2-B8E4-4907-907C-F300A2506621}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BD9B7E1D-16BA-4E41-86DC-1F4A20840F79}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F46C2BC2-B8E4-4907-907C-F300A2506621}.Debug|x64.ActiveCfg = Debug|x64
+		{F46C2BC2-B8E4-4907-907C-F300A2506621}.Debug|x64.Build.0 = Debug|x64
+		{F46C2BC2-B8E4-4907-907C-F300A2506621}.Debug|x86.ActiveCfg = Debug|Win32
+		{F46C2BC2-B8E4-4907-907C-F300A2506621}.Debug|x86.Build.0 = Debug|Win32
+		{F46C2BC2-B8E4-4907-907C-F300A2506621}.Release|x64.ActiveCfg = Release|x64
+		{F46C2BC2-B8E4-4907-907C-F300A2506621}.Release|x64.Build.0 = Release|x64
+		{F46C2BC2-B8E4-4907-907C-F300A2506621}.Release|x86.ActiveCfg = Release|Win32
+		{F46C2BC2-B8E4-4907-907C-F300A2506621}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {73A23C94-6E3B-416C-9E7B-0CC1A8ABB1D0}
+	EndGlobalSection
+EndGlobal

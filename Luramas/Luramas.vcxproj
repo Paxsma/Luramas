@@ -1,0 +1,536 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{f46c2bc2-b8e4-4907-907c-f300a2506621}</ProjectGuid>
+    <RootNamespace>luaUdecompiler</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Luramas</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(MSBuildProjectDirectory)\3rdparty\luau\;$(MSBuildProjectDirectory)\3rdparty\lua\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(MSBuildProjectDirectory)\3rdparty\luau\;$(MSBuildProjectDirectory)\3rdparty\lua\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(MSBuildProjectDirectory)\3rdparty\luau\;$(MSBuildProjectDirectory)\3rdparty\lua\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(MSBuildProjectDirectory)\3rdparty\luau\;$(MSBuildProjectDirectory)\3rdparty\lua\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y $(ProjectDir)compile_me.lua  $(OutDir)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y $(ProjectDir)compile_me.lua  $(OutDir)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;LVM_BYE_LINK_INTO_TOOLS;LLVM_POLLY_LINK_INTO_TOOLS</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y $(ProjectDir)compile_me.lua  $(OutDir)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;NOENTRY</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y $(ProjectDir)compile_me.lua  $(OutDir)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="3rdparty\luau\Luau-V3\Ast\src\Ast.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Ast\src\Confusables.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Ast\src\Lexer.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Ast\src\Location.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Ast\src\Parser.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Ast\src\StringUtils.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Ast\src\TimeTrace.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\BuiltinFolding.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\Builtins.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\BytecodeBuilder.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\Compiler.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\ConstantFolding.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\CostModel.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\lcode.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\TableShape.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\Compiler\src\ValueTracking.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lapi.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\laux.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lbaselib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lbitlib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lbuiltins.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lcorolib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\ldblib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\ldebug.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\ldo.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lfunc.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lgc.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lgcdebug.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\linit.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lmathlib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lmem.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lnumprint.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lobject.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\loslib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lperf.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lstate.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lstring.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lstrlib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\ltable.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\ltablib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\ltm.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\ludata.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lutf8lib.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lvmexecute.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lvmload.cpp" />
+    <ClCompile Include="3rdparty\luau\Luau-V3\VM\src\lvmutils.cpp" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lapi.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lauxlib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lbaselib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lbitlib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lcode.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lcorolib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lctype.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\ldblib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\ldebug.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\ldo.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\ldump.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lfunc.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lgc.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\linit.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\liolib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\llex.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lmathlib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lmem.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\loadlib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lobject.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lopcodes.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\loslib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lparser.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lstate.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lstring.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lstrlib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\ltable.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\ltablib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\ltm.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lundump.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lutf8lib.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lvm.c" />
+    <ClCompile Include="3rdparty\lua\Lua_5.3.6\lzio.c" />
+    <ClCompile Include="docs\template\analysis\analysis.cpp" />
+    <ClCompile Include="docs\template\disassembler\disassembler.cpp" />
+    <ClCompile Include="docs\template\generation\generation.cpp" />
+    <ClCompile Include="docs\template\lower\lower.cpp" />
+    <ClCompile Include="docs\template\usage\usage.cpp" />
+    <ClCompile Include="examples\lua\Lua_5.3.6\example.cpp" />
+    <ClCompile Include="framework\analysis\bytecode\luau\V3\analysis.cpp" />
+    <ClCompile Include="framework\analysis\bytecode\lua\Lua_5.3.6\analysis.cpp" />
+    <ClCompile Include="framework\ast\ast\ast.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\cache\global.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\arguements.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\branches.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\calls.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\classes.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\concats.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\flags.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\nodes.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\locvars.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\logical_expressions.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\loops.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\proto.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\registers.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\scopes.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\tables.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\upvalues.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\post\transformers\arith.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\post\transformers\table.cpp" />
+    <ClCompile Include="framework\disassembler\luau\V3\disassembler.cpp" />
+    <ClCompile Include="framework\disassembler\lua\Lua_5.3.6\disassembler.cpp" />
+    <ClCompile Include="framework\il\il\il.cpp" />
+    <ClCompile Include="framework\il\il\resolver\resolver.cpp" />
+    <ClCompile Include="framework\il\il\validate\validate.cpp" />
+    <ClCompile Include="framework\il\lifter\langs\luau\V3\parser\parser.cpp" />
+    <ClCompile Include="framework\il\lifter\langs\luau\V3\resolver\resolver.cpp" />
+    <ClCompile Include="framework\il\lifter\langs\lua\Lua_5.3.6\Lua_5.3.6.cpp" />
+    <ClCompile Include="framework\il\lifter\langs\lua\Lua_5.3.6\parser\parser.cpp" />
+    <ClCompile Include="framework\il\lifter\langs\lua\Lua_5.3.6\resolver\resolver.cpp" />
+    <ClCompile Include="framework\il\il\transformers\transformers.cpp" />
+    <ClCompile Include="framework\manipulation\bytecode\luau\V3\manipulate.cpp" />
+    <ClCompile Include="framework\manipulation\bytecode\lua\Lua_5.3.6\manipulate.cpp" />
+    <ClCompile Include="framework\static_analysis\static_analysis.cpp" />
+    <ClCompile Include="framework\il\il\tools\disassembler.cpp" />
+    <ClCompile Include="framework\il\lifter\langs\luau\V3\Luau-V3.cpp" />
+    <ClCompile Include="framework\ir\features\optimize\optimize.cpp" />
+    <ClCompile Include="framework\ir\features\formatting\smart_formatting.cpp" />
+    <ClCompile Include="framework\ir\features\naming\naming.cpp" />
+    <ClCompile Include="framework\ir\ir.cpp" />
+    <ClCompile Include="framework\loss\loss.cpp" />
+    <ClCompile Include="framework\ir\lifter\lifter\lifter.cpp" />
+    <ClCompile Include="framework\il\lexer\lexer.cpp" />
+    <ClCompile Include="examples\luau\V3\example.cpp" />
+    <ClCompile Include="examples\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\Ast.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\Confusables.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\DenseHash.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\Lexer.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\Location.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\ParseOptions.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\Parser.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\ParseResult.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\StringUtils.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Ast\include\Luau\TimeTrace.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Common\include\Luau\Bytecode.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Common\include\Luau\Common.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Common\include\Luau\ExperimentalFlags.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\include\luacode.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\include\Luau\BytecodeBuilder.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\include\Luau\Compiler.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\src\BuiltinFolding.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\src\Builtins.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\src\ConstantFolding.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\src\CostModel.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\src\TableShape.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\Compiler\src\ValueTracking.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\include\lua.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\include\luaconf.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\include\lualib.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lapi.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lbuiltins.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lbytecode.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lcommon.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\ldebug.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\ldo.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lfunc.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lgc.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lmem.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lnumutils.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lobject.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lstate.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lstring.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\ltable.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\ltm.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\ludata.h" />
+    <ClInclude Include="3rdparty\luau\Luau-V3\VM\src\lvm.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lapi.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lauxlib.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lcode.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lctype.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\ldebug.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\ldo.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lfunc.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lgc.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\llex.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\llimits.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lmem.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lobject.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lopcodes.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lparser.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lprefix.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lstate.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lstring.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\ltable.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\ltm.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lua.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lua.hpp" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\luaconf.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lualib.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lundump.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lvm.h" />
+    <ClInclude Include="3rdparty\lua\Lua_5.3.6\lzio.h" />
+    <ClInclude Include="docs\template\analysis\analysis.hpp" />
+    <ClInclude Include="docs\template\disassembler\disassembler.hpp" />
+    <ClInclude Include="docs\template\generation\generation.h" />
+    <ClInclude Include="docs\template\lifter\lifter.hpp" />
+    <ClInclude Include="docs\template\usage\usage.hpp" />
+    <ClInclude Include="examples\lua\Lua_5.3.6\example.hpp" />
+    <ClInclude Include="framework\analysis\common\analysis.hpp" />
+    <ClInclude Include="framework\analysis\bytecode\luau\V3\analysis.hpp" />
+    <ClInclude Include="framework\analysis\bytecode\lua\Lua_5.3.6\analysis.hpp" />
+    <ClInclude Include="framework\ast\ast\ast.hpp" />
+    <ClInclude Include="framework\ast\ast\kinds.hpp" />
+    <ClInclude Include="framework\ast\ast\transformers\transformers_default.hpp" />
+    <ClInclude Include="framework\ast\debug.hpp" />
+    <ClInclude Include="framework\ast\ast\transformers\transformers_macros.hpp" />
+    <ClInclude Include="framework\ast\ast\macros.hpp" />
+    <ClInclude Include="framework\ast\ast\transformers\transformers_post.hpp" />
+    <ClInclude Include="framework\disassembler\luau\V3\3rdparty\imports.hpp" />
+    <ClInclude Include="framework\disassembler\luau\V3\disassembler.hpp" />
+    <ClInclude Include="framework\disassembler\luau\V3\op_table.hpp" />
+    <ClInclude Include="framework\disassembler\lua\Lua_5.3.6\3rdparty\imports.hpp" />
+    <ClInclude Include="framework\disassembler\lua\Lua_5.3.6\disassembler.hpp" />
+    <ClInclude Include="framework\disassembler\lua\Lua_5.3.6\op_table.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\constant\classes.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\constant\imports.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\generate.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\langkeywords.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\support.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\supported.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generation_syntax.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\constant\branch.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\constant\for.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\constant\function.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\constant\loop.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\constant\return.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\expression\arith.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\expression\call.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\expression\concat.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\expression\datatype.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\expression\logical.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\expression\selfcall.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\expression\table.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\expression\unary.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\line\line.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\statement\arith.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\statement\assignment.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\statement\comment.hpp" />
+    <ClInclude Include="framework\il\code\generation\common\generate\statement\locvar.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\constant\branch.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\constant\for.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\constant\function.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\constant\loop.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\constant\return.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\emit.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\expression\arith.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\expression\call.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\expression\concat.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\expression\datatype.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\expression\logical.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\expression\selfcall.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\expression\table.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\expression\unary.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\line\line.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\statement\arith.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\statement\assignment.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\generate\statement\comment.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\langkeywords.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\lua_header.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\lua\support.hpp" />
+    <ClInclude Include="framework\il\il\architecture\emitter.hpp" />
+    <ClInclude Include="framework\il\il\symbols\symbols.hpp" />
+    <ClInclude Include="framework\il\lifter\langs\luau\V3\parser\parser.hpp" />
+    <ClInclude Include="framework\il\lifter\langs\luau\V3\resolver\resolver.hpp" />
+    <ClInclude Include="framework\il\lifter\langs\lua\Lua_5.3.6\Lua_5.3.6.hpp" />
+    <ClInclude Include="framework\il\lifter\langs\lua\Lua_5.3.6\parser\parser.hpp" />
+    <ClInclude Include="framework\il\lifter\langs\lua\Lua_5.3.6\resolver\resolver.hpp" />
+    <ClInclude Include="framework\il\lifter\parser\parser.hpp" />
+    <ClInclude Include="framework\il\lifter\resolver\resolver.hpp" />
+    <ClInclude Include="framework\il\il\transformers\transformers.hpp" />
+    <ClInclude Include="framework\ir\lifter\lifter\lifter_flags.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\support.hpp" />
+    <ClInclude Include="framework\manipulation\bytecode\luau\V3\manipulate.hpp" />
+    <ClInclude Include="framework\manipulation\bytecode\lua\Lua_5.3.6\manipulate.hpp" />
+    <ClInclude Include="framework\static_analysis\static_analysis.hpp" />
+    <ClInclude Include="framework\color.hpp" />
+    <ClInclude Include="framework\il\il\il.hpp" />
+    <ClInclude Include="framework\il\il\architecture\architecture.hpp" />
+    <ClInclude Include="framework\il\il\il_lifter.hpp" />
+    <ClInclude Include="framework\il\il\tools\disassembler.hpp" />
+    <ClInclude Include="framework\il\lifter\langs\luau\V3\Luau-V3.hpp" />
+    <ClInclude Include="framework\target\targets\targets.hpp" />
+    <ClInclude Include="framework\ir\data\features\formatting.hpp" />
+    <ClInclude Include="framework\ir\data\features\optimizations.hpp" />
+    <ClInclude Include="framework\ir\data\features\refrence_string.hpp" />
+    <ClInclude Include="framework\ir\data\data.hpp" />
+    <ClInclude Include="framework\ir\features\optimize\optimize.hpp" />
+    <ClInclude Include="framework\ir\features\formatting\smart_formatting.hpp" />
+    <ClInclude Include="framework\ir\features\naming\names.hpp" />
+    <ClInclude Include="framework\ir\features\naming\naming.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\constant\branch.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\constant\for.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\constant\function.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\constant\return.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\expression\arith.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\expression\call.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\expression\concat.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\constant\loop.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\emit.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\expression\datatype.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\expression\logical.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\expression\selfcall.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\expression\table.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\expression\unary.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\line\line.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\statement\arith.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\statement\assignment.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\generate\statement\comment.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\luau_header.hpp" />
+    <ClInclude Include="framework\il\code\generation\lang\luau\langkeywords.hpp" />
+    <ClInclude Include="framework\ir\ir.hpp" />
+    <ClInclude Include="framework\loss\loss.hpp" />
+    <ClInclude Include="framework\ir\lifter\lifter\lifter.hpp" />
+    <ClInclude Include="framework\debug.hpp" />
+    <ClInclude Include="framework\ir\lifter\lifter\lifter_data.hpp" />
+    <ClInclude Include="framework\ir\lifter\debug.hpp" />
+    <ClInclude Include="framework\ir\lifter\lifter\lifter_macros.hpp" />
+    <ClInclude Include="framework\il\lexer\lexer.hpp" />
+    <ClInclude Include="examples\luau\V3\example.hpp" />
+    <ClInclude Include="framework\target\target.hpp" />
+    <ClInclude Include="framework\target_imports.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="compile_me.lua">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Known Issues.text" />
+    <None Include="..\README.md" />
+    <None Include=".clang-format" />
+    <None Include="docs\analysis\analysis.md" />
+    <None Include="docs\decompiler\decompiler.md" />
+    <None Include="docs\ast\ast.md" />
+    <None Include="docs\ast\structure.md" />
+    <None Include="docs\decompiler\test\luau.md" />
+    <None Include="docs\dissassembler\dissassembler.md" />
+    <None Include="docs\format\format.md" />
+    <None Include="docs\framework.md" />
+    <None Include="docs\il\architecture.md" />
+    <None Include="docs\il\il.md" />
+    <None Include="docs\il\lifting.md" />
+    <None Include="docs\il\op_table.md" />
+    <None Include="docs\il\symbols.md" />
+    <None Include="docs\il\virtual_functions.md" />
+    <None Include="docs\ir\code_generation.md" />
+    <None Include="docs\ir\ir.md" />
+    <None Include="docs\lexer\lexer.md" />
+    <None Include="docs\loss\loss.md" />
+    <None Include="framework\ast\ast\transformers\transformers.hpp" />
+    <None Include="docs\support.md" />
+    <None Include="test\lua\closures.lua" />
+    <None Include="TODO.text" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

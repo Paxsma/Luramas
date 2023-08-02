@@ -1,0 +1,7 @@
+FOLLOW CFG FOR THESE:
+	[ISSUE] - Compare parentheses issue
+	[ISSUE] - Logical operations dont register fully for huge or, ands.
+
+[ISSUE] - loadb issue for logical operations
+[ISSUE] - Compare issue opcodes, data
+[ISSUE] - Tables
