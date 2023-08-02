@@ -506,6 +506,7 @@
   <ItemGroup>
     <None Include="..\Known Issues.text" />
     <None Include="..\README.md" />
+    <None Include="..\TODO.md" />
     <None Include=".clang-format" />
     <None Include="docs\analysis\analysis.md" />
     <None Include="docs\decompiler\decompiler.md" />
@@ -528,7 +529,6 @@
     <None Include="framework\ast\ast\transformers\transformers.hpp" />
     <None Include="docs\support.md" />
     <None Include="test\lua\closures.lua" />
-    <None Include="TODO.text" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
