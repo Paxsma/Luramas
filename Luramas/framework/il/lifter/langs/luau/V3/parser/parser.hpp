@@ -14,6 +14,9 @@ namespace luau_v3_parsers {
       /* Inits parser, does not remove or add any new instructions, everything is alligned. */
       void parse_instructions(luramas::il::lifter::parser::parser_manager<luau_v3_disassembler::disassembly> &pm);
 
+      /* Parse jumps */
+      void parse_jumps(luramas::il::lifter::parser::parser_manager<luau_v3_disassembler::disassembly> &pm);
+
 } // namespace luau_v3_parsers
 
 #endif

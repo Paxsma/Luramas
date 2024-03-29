@@ -24,8 +24,8 @@ namespace luramas {
                                     bool disabled = false; /* All indents are disabled. */
 
                                     /* Generic indent */
-                                    std::string indent = "   ";    /* Amount of indent per line e.g. a1 += 1; */
-                                    std::size_t indent_start = 0u; /* Start on indent amount. */
+                                    std::string indent_space = "   "; /* Amount of indent per line e.g. a1 += 1; */
+                                    std::size_t indent_start = 0u;    /* Start on indent amount. */
 
                                     /* if */
                                     std::size_t indent_if_pre = 0u;  /* Indent on if statement. */
@@ -367,7 +367,7 @@ namespace luramas {
                                     /* Turns string into parenthesis. **STRING NOT REFRENCE** */
                                     template <bool ignore = false /* Ignores spacing */>
                                     std::string format_parenthesis_str(const char *const open, const std::string &str, const char *const close) {
-                                          return this->format_parenthesis_open<igore>(open) + str + this->format_parenthesis_close<ignore>(close);
+                                          return this->format_parenthesis_open<ignore>(open) + str + this->format_parenthesis_close<ignore>(close);
                                     }
 
                                     /* Turns string into parenthesis. */

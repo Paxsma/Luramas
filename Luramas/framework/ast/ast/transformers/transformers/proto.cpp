@@ -1,6 +1,6 @@
 #include "../transformers.hpp"
 
-void luramas::ast::transformers::closure::set_closure_info(const std::shared_ptr<luramas::ast::ast> &current_closure, const std::size_t child_closure_id) {
+void luramas::ast::transformers::closure::process_closure_info(const std::shared_ptr<luramas::ast::ast> &current_closure, const std::size_t child_closure_id) {
 
       std::shared_ptr<luramas::ast::node> end_capture = nullptr;
       std::shared_ptr<luramas::ast::node> closure_node = nullptr;
@@ -16,7 +16,7 @@ void luramas::ast::transformers::closure::set_closure_info(const std::shared_ptr
       for (const auto &i : closures) {
 
             /* Already analyzed. */
-            if (i->has_expr(luramas::ast::element_kinds::closure_global) || i->has_expr(luramas::ast::element_kinds::closure_scoped) || i->has_expr(luramas::ast::element_kinds::closure_anonymous)) {
+            if (i->has_elem(luramas::ast::element_kinds::stat_closure_global) || i->has_elem(luramas::ast::element_kinds::stat_closure_scoped) || i->has_elem(luramas::ast::element_kinds::stat_closure_anonymous)) {
                   continue;
             }
 
@@ -42,17 +42,17 @@ void luramas::ast::transformers::closure::set_closure_info(const std::shared_ptr
 
                   /* Next is null */
                   if (next == nullptr) {
-                        closure_node->add_expr<luramas::ast::element_kinds::closure_scoped>(1u, luramas::ast::element::front); /* scoped function ?? (??) [MUTABLE] */
+                        closure_node->add_elem<luramas::ast::element_kinds::stat_closure_scoped>(1u, luramas::ast::element::front); /* scoped function ?? (??) [MUTABLE] */
                   } else {
 
                         /* Next is setglobal and uses reg as source. */
-                        if (next->lex->disassembly->op == luramas::il::arch::opcodes::OP_SETGLOBAL && next->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg == i->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg) {
-                              closure_node->add_expr<luramas::ast::element_kinds::closure_global>(1u, luramas::ast::element::front);
+                        if (next->lex->disassembly->op == luramas::il::arch::opcodes::OP_SETGLOBAL && next->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg == i->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg) {
+                              closure_node->add_elem<luramas::ast::element_kinds::stat_closure_global>(1u, luramas::ast::element::front);
                               closure_node->closures.setglobal_node = next;
                               closure_node = next;
-                              closure_node->add_expr<luramas::ast::element_kinds::closure_global>(1u, luramas::ast::element::front); /* global function ?? (??) */
+                              closure_node->add_elem<luramas::ast::element_kinds::stat_closure_global>(1u, luramas::ast::element::front); /* global function ?? (??) */
                         } else {
-                              closure_node->add_expr<luramas::ast::element_kinds::closure_scoped>(1u, luramas::ast::element::front); /* scoped function ?? (??) [MUTABLE] */
+                              closure_node->add_elem<luramas::ast::element_kinds::stat_closure_scoped>(1u, luramas::ast::element::front); /* scoped function ?? (??) [MUTABLE] */
                         }
                   }
 
@@ -82,13 +82,13 @@ void luramas::ast::transformers::closure::set_closure_info(const std::shared_ptr
                               break;
                         }
 
-                        target = next->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
-                        name += next->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
+                        target = next->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
+                        name += next->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
 
-                  } else if (next->lex->kind == luramas::il::lexer::inst_kinds::table_get && next->lex->has_operand_expr<luramas::il::lexer::operand_kinds::kvalue>()) {
+                  } else if (next->lex->kind == luramas::il::lexer::inst_kinds::table_get && next->lex->has_operand_kind<luramas::il::lexer::operand_kinds::kvalue>()) {
 
-                        const auto dest = next->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
-                        const auto source = next->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
+                        const auto dest = next->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
+                        const auto source = next->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
 
                         if (target == source) {
                               target = dest;
@@ -97,15 +97,15 @@ void luramas::ast::transformers::closure::set_closure_info(const std::shared_ptr
                               break;
                         }
 
-                        name += '.' + next->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
+                        name += '.' + next->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
 
                   } else if (next->lex->kind == luramas::il::lexer::inst_kinds::table_set) {
 
-                        const auto source = next->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
-                        const auto reg = next->lex->operand_expr<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
+                        const auto source = next->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
+                        const auto reg = next->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
 
-                        if (source == closure_node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg && reg == target) {
-                              name += '.' + next->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
+                        if (source == closure_node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg && reg == target) {
+                              name += '.' + next->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
                               break;
                         }
 
@@ -136,35 +136,35 @@ void luramas::ast::transformers::closure::set_closure_info(const std::shared_ptr
             closure->closure_name->emitter_datatype_kval(name);
 
             /* Replace next */
-            if (closure_node->has_expr(luramas::ast::element_kinds::closure_scoped)) {
+            if (closure_node->has_elem(luramas::ast::element_kinds::stat_closure_scoped)) {
 
-                  closure_node->replace_next<luramas::ast::element_kinds::closure_scoped, luramas::ast::element_kinds::closure_global>();
+                  closure_node->replace_next<luramas::ast::element_kinds::stat_closure_scoped, luramas::ast::element_kinds::stat_closure_global>();
 
-            } else if (closure_node->has_expr(luramas::ast::element_kinds::closure_anonymous)) {
+            } else if (closure_node->has_elem(luramas::ast::element_kinds::stat_closure_anonymous)) {
 
-                  closure_node->replace_next<luramas::ast::element_kinds::closure_anonymous, luramas::ast::element_kinds::closure_global>();
+                  closure_node->replace_next<luramas::ast::element_kinds::stat_closure_anonymous, luramas::ast::element_kinds::stat_closure_global>();
             }
 
             /* Fill with dead instructions. */
             for (const auto &i : current_closure->body->visit_range_current((closure_node->address + closure_node->lex->disassembly->len), next->address))
-                  i->add_expr<luramas::ast::element_kinds::dead_instruction>(); /* Handled by before hand. */
+                  i->add_elem<luramas::ast::element_kinds::desc_dead_instruction>(); /* Handled by before hand. */
 
             closure_node->closures.idx_nodes = std::make_pair(end_capture, next);
 
       } else {
 
             /* Comes with closure name. */
-            if (closure_node->has_expr(luramas::ast::element_kinds::closure_global)) {
+            if (closure_node->has_elem(luramas::ast::element_kinds::stat_closure_global)) {
 
                   closure->closure_kind = luramas::ast::closure_kinds::global;
-                  closure->closure_name->emitter_datatype_kval(closure_node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value);
-                  closure_node->add_expr<luramas::ast::element_kinds::dead_instruction>(); /* Handled by before hand. */
+                  closure->closure_name->emitter_datatype_kval(closure_node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value);
+                  closure_node->add_elem<luramas::ast::element_kinds::desc_dead_instruction>(); /* Handled by before hand. */
 
-            } else if (closure_node->has_expr(luramas::ast::element_kinds::closure_scoped)) { /* Closure name doesn't get compiled unless specified. */
+            } else if (closure_node->has_elem(luramas::ast::element_kinds::stat_closure_scoped)) { /* Closure name doesn't get compiled unless specified. */
 
                   closure->closure_kind = luramas::ast::closure_kinds::scoped;
 
-            } else if (closure_node->has_expr(luramas::ast::element_kinds::closure_anonymous)) { /* No closure name. */
+            } else if (closure_node->has_elem(luramas::ast::element_kinds::stat_closure_anonymous)) { /* No closure name. */
 
                   closure->closure_kind = luramas::ast::closure_kinds::anonymous;
 

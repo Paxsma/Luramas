@@ -88,20 +88,6 @@ namespace luramas {
 
                   namespace constant {
 
-                        /* Logical operation kinds */
-                        enum class logical_operations_kinds : std::uint8_t {
-                              nothing, /* Nothing */
-                              and_,    /* && */
-                              or_,     /* || */
-                              lt,      /* < */
-                              lte,     /* <= */
-                              eq,      /* == */
-                              ne,      /* ~= */
-                              gt,      /* > */
-                              gte,     /* >= */
-                              nt,      /* ! */
-                        };
-
                         enum class constant_kinds : std::uint8_t {
 
                               nothing, /* not constant */

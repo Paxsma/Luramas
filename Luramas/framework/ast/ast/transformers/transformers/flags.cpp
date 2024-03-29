@@ -7,16 +7,22 @@ void luramas::ast::transformers::flags::set_pops(std::shared_ptr<luramas::ast::a
       auto all = ast->body->visit_all();
       for (auto &i : all) {
 
-            /* Append for poparg. */
-            if (i->lex->disassembly->op == luramas::il::arch::opcodes::OP_POPARG) {
+            switch (i->lex->disassembly->op) {
 
-                  append_regs.emplace_back(i->lex->operand_expr<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg);
+                  case luramas::il::arch::opcodes::OP_POPARG: {
+                        append_regs.emplace_back(i->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg);
+                        break;
+                  }
 
-            } else if (i->lex->disassembly->op == luramas::il::arch::opcodes::OP_CCALL) {
+                  case luramas::il::arch::opcodes::OP_CCALL: { /* Set for call. */
+                        i->flags.poparg_flag.call_pop = append_regs;
+                        append_regs.clear();
+                        break;
+                  }
 
-                  /* Set for call. */
-                  i->flags.poparg_flag.call_pop = append_regs;
-                  append_regs.clear();
+                  default: {
+                        break;
+                  }
             }
       }
 

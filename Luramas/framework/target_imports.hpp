@@ -1,6 +1,8 @@
 #pragma once
 #include "target/target.hpp"
 
+#pragma region lua
+
 #if luramas_target == luramas_target_lua_53_6
 
 #include "disassembler/lua/Lua_5.3.6/3rdparty/imports.hpp" /* Third party imports */
@@ -9,6 +11,10 @@
 
 #endif
 
+#pragma endregion
+
+#pragma region luau
+
 #if luramas_target == luramas_target_luau_v3
 
 #include "disassembler/luau/V3/3rdparty/imports.hpp" /* Third party imports */
@@ -16,3 +22,5 @@
 #include "il/lifter/langs/luau/V3/Luau-V3.hpp"       /* Intermidiante Language Lifter */
 
 #endif
+
+#pragma endregion

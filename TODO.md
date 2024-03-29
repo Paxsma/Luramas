@@ -6,7 +6,6 @@
 * [BUG] Fix branch compare issues
 * [BUG] Make table settable in ast very leintant outside and just concat with ir optimzations
 * [BUG] Fix proto issue in AST and locvars (STRUCTURE)
-* [BUG] ADD CMPS too lifter too ignore loadbool jump
 * [BUG] Fix loadbools in AST
 * [BUG] Fix upvalue captures
 

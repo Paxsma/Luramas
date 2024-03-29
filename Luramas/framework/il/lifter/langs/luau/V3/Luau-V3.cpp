@@ -28,7 +28,11 @@ void luramas::il::lifter::lift(Proto *p, const std::vector<std::shared_ptr<luau_
       };
 
       pm.add(luau_v3_parsers::parse_compares);
+      pm.add(luau_v3_parsers::parse_jumps);
       pm.run();
+
+      for (const auto &i : pm.il->dis)
+            std::cout << "BT " << i->disassemble() << std::endl;
 
       rm.add(luau_v3_resolvers::resolve_instruction_operands);
       rm.add(luau_v3_resolvers::resolve_jump_operands);
@@ -36,7 +40,7 @@ void luramas::il::lifter::lift(Proto *p, const std::vector<std::shared_ptr<luau_
       rm.run();
 
       /* Parses Kvalues */
-      for (auto i = 0u; i < p->sizek; ++i) {
+      for (auto i = 0; i < p->sizek; ++i) {
 
             const auto kval = p->k[i];
 
@@ -51,7 +55,7 @@ void luramas::il::lifter::lift(Proto *p, const std::vector<std::shared_ptr<luau_
                   }
                   case lua_Type::LUA_TBOOLEAN: {
                         ptr->type = luramas::il::arch::kval_kinds::boolean;
-                        ptr->boolean.boolean = kval.value.b;
+                        ptr->boolean.b = kval.value.b;
                         break;
                   }
 
@@ -63,10 +67,10 @@ void luramas::il::lifter::lift(Proto *p, const std::vector<std::shared_ptr<luau_
                   case lua_Type::LUA_TNUMBER: {
 
                         ptr->type = luramas::il::arch::kval_kinds::integer;
-                        ptr->integer.integer = kval.value.n;
+                        ptr->integer.i = kval.value.n;
 
                         /* String and remove trailing 0's */
-                        ptr->integer.str = std::to_string(ptr->integer.integer);
+                        ptr->integer.str = std::to_string(ptr->integer.i);
                         ptr->integer.str.erase(ptr->integer.str.find_last_not_of('0') + 1, std::string::npos);
                         ptr->integer.str.erase(ptr->integer.str.find_last_not_of('.') + 1, std::string::npos);
 
@@ -83,7 +87,7 @@ void luramas::il::lifter::lift(Proto *p, const std::vector<std::shared_ptr<luau_
                         ptr->string.str = gco2ts(kval.value.gc)->data;
 
                         /* Clean string. */
-                        static constexpr std::array str_arr = {'\"', '\''};
+                        constexpr std::array str_arr = {'\"', '\''};
 
                         for (const auto i : str_arr) {
 
@@ -142,14 +146,13 @@ void luramas::il::lifter::lift(Proto *p, const std::vector<std::shared_ptr<luau_
       }
 
       /* Protos */
-      for (auto i = 0u; i < p->sizep; ++i)
+      for (auto i = 0; i < p->sizep; ++i)
             buffer->closures.emplace_back(lift_closure(p->p[i]));
 
       return;
 }
 
 std::shared_ptr<luramas::il::ilang> luramas::il::lifter::lift(Proto *p) {
-
       auto buffer = std::make_shared<luramas::il::ilang>();
       std::vector<std::shared_ptr<luau_v3_disassembler::disassembly>> dism;
       luau_v3_disassembler::disassemble(p, dism);

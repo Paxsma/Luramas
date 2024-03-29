@@ -111,7 +111,7 @@ typedef struct lua_TValue {
 #define rttype(o) ((o)->tt_)
 
 /* tag with no variants (bits 0-3) */
-#define novariant(x) ((x)&0x0F)
+#define novariant(x) ((x) & 0x0F)
 
 /* type tag of a TValue (bits 0-3 for tags + variant bits 4-5) */
 #define ttype(o) (rttype(o) & 0x3F)

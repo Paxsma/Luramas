@@ -11,12 +11,12 @@ void luramas::ast::transformers::nodes::set_exit_exprs(std::shared_ptr<luramas::
 
             /* Hit */
             if (hit_deadcode) {
-                  i->add_expr<luramas::ast::element_kinds::exit_dead>();
+                  i->add_safe<luramas::ast::element_kinds::desc_exit_dead>();
             }
 
             /* Append */
-            if ((i->lex->kind == luramas::il::lexer::inst_kinds::branch || i->lex->kind == luramas::il::lexer::inst_kinds::branch_condition) && i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp >= 0) {
-                  scopes.emplace_back(i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
+            if ((i->lex->kind == luramas::il::lexer::inst_kinds::branch || i->lex->kind == luramas::il::lexer::inst_kinds::branch_condition) && i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp >= 0) {
+                  scopes.emplace_back(i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
             }
 
             /* Found */
@@ -26,7 +26,7 @@ void luramas::ast::transformers::nodes::set_exit_exprs(std::shared_ptr<luramas::
 
             /* End */
             if (scopes.empty() && i->lex->kind == luramas::il::lexer::inst_kinds::return_) {
-                  i->add_expr<luramas::ast::element_kinds::exit_post>();
+                  i->add_safe<luramas::ast::element_kinds::desc_exit_post>();
                   hit_deadcode = true;
             }
       }

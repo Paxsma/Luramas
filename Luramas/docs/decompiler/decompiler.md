@@ -26,14 +26,18 @@ For the decompiler it generates various levels of abstraction to make decompilat
 
 File to put source code in to test decompiler can be found in [test/](../../test)
 
-### Decompile Lua
-
-To decompile lua code just too [compile_me.lua](Luramas/compile_me.lua) **MUST BE UTF-8** where code in it will get compiled and decompiled and you can compare results.
-
-### Decompile Bytecode
-
-If you have some bytecode that has already been compiled just create a char point for it and pass it through luau_load get proto and make ast from it with config. Just refer to main.cpp.
-
 ### Decompile Target Examples
 
 Decompilation of different targets can be found in [examples/](Luramas/examples/)
+
+### Decompile Target Source Code
+
+To decompile source to different langueges there files can be found here:
+* **Lua**: [examples/lua/compile_lua.lua](examples/lua/compile_lua.lua)
+* **LuaJit**: [examples/luajit/compile_luajit.lua](examples/luajit/compile_luajit.lua)
+* **LuaU**: [examples/luau/compile_luau.lua](examples/luau/compile_lua.lua)
+* **Python**: [examples/python/compile_py.py](examples/python/compile_py.py)
+**ALL FILES MUST BE UTF-8**
+
+
+

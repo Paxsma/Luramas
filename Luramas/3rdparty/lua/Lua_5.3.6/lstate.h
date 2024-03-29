@@ -119,7 +119,7 @@ typedef struct CallInfo {
 
 /* assume that CIST_OAH has offset 0 and that 'v' is strictly 0/1 */
 #define setoah(st, v) ((st) = ((st) & ~CIST_OAH) | (v))
-#define getoah(st) ((st)&CIST_OAH)
+#define getoah(st) ((st) & CIST_OAH)
 
 /*
 ** 'global state', shared by all threads of this state

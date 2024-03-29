@@ -12,6 +12,7 @@
 #define luramas_ast_debug
 
 #include "../debug.hpp"
+#if luramas_debug_all
 
 #pragma region ast_debug
 
@@ -37,5 +38,7 @@
 #define DEBUG_AST_LOCVAR_REGISTERS false /* Bases ALL locvar detection on register stack(can be inaccurate). */
 
 #pragma endregion
+
+#endif
 
 #endif

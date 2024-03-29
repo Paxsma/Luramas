@@ -15,6 +15,7 @@ Proto *compile_script(const std::string &code, bool &error, lua_State *&buffer) 
             return NULL;
       }
 
+      std::cout << "buffer->top " << (buffer->top - 1)->tt << std::endl;
       return gco2cl((buffer->top - 1)->value.gc)->l.p; /* Code proto. */
 }
 
@@ -43,7 +44,8 @@ std::string luramas::decompile(const std::string &code, const std::shared_ptr<ir
       luramas::il::transformers::eliminate::junk_code(il); /* Eliminate junk code */
 
       auto ast = luramas::ast::gen_ast(syntax_target, il, config, format); /* Generate AST */
-      ast->run<true>(); /* Run passthroughs */
+      ast->run<true>();                                                    /* Run passthroughs */
+      std::cout << "cfg: " << ast->gen_cfg() << std::endl;
       auto ir = luramas::ir::lifter::lift(ast, config, format, optimizations);                  /* Lift AST too IR. */
       auto ir_map = ir.get_map();                                                               /* Get IR map. */
       auto decom = luramas::ir::generate(ast->syntax, ir.get(), ir_map, format, optimizations); /* Generate code from IR. */

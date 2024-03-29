@@ -26,7 +26,7 @@ void luramas::il::disassemble_il_bytecode(void *il_bytecode, std::shared_ptr<lur
             switch (kval_kind) {
 
                   case il::arch::kval_kinds::boolean: {
-                        kval->boolean.boolean = read<std::uint8_t>(il);
+                        kval->boolean.b = read<std::uint8_t>(il);
                         break;
                   }
 
@@ -42,8 +42,8 @@ void luramas::il::disassemble_il_bytecode(void *il_bytecode, std::shared_ptr<lur
                   }
 
                   case il::arch::kval_kinds::integer: {
-                        kval->integer.integer = read<double>(il);
-                        kval->integer.str = std::to_string(kval->integer.integer);
+                        kval->integer.i = read<double>(il);
+                        kval->integer.str = std::to_string(kval->integer.i);
                         kval->integer.str.erase(kval->integer.str.find_last_not_of('0') + 1, std::string::npos);
                         kval->integer.str.erase(kval->integer.str.find_last_not_of('.') + 1, std::string::npos);
                         break;

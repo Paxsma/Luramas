@@ -19,17 +19,17 @@ namespace ir_format {
                   if (post) {
 
                         for (auto i = 0u; i < amt; ++i)
-                              this->indent += format->indent.indent;
+                              this->indent += format->indent.indent_space;
 
-                        indent_vect.back() = this->indent;
+                        this->indent_vect.back() = this->indent;
 
                   } else {
 
                         if (dec) {
 
                               for (auto i = 0u; i < amt; ++i)
-                                    if (!indent_vect.empty()) {
-                                          indent_vect.pop_back();
+                                    if (!this->indent_vect.empty()) {
+                                          this->indent_vect.pop_back();
                                     }
 
                               this->indent = indent_vect.back();
@@ -37,9 +37,9 @@ namespace ir_format {
                         } else {
 
                               for (auto i = 0u; i < amt; ++i)
-                                    this->indent += format->indent.indent;
+                                    this->indent += format->indent.indent_space;
 
-                              indent_vect.emplace_back(this->indent);
+                              this->indent_vect.emplace_back(this->indent);
                         }
                   }
             }
@@ -72,15 +72,15 @@ namespace ir_format {
                         }
                   }
 
-                  linebreak_changed = (cached != this->linebreak);
+                  this->linebreak_changed = (cached != this->linebreak);
                   return;
             }
 
             void clear() {
-                  indent_vect.clear();
-                  linebreak_vect.clear();
-                  indent.clear();
-                  linebreak = 0u;
+                  this->indent_vect.clear();
+                  this->linebreak_vect.clear();
+                  this->indent.clear();
+                  this->linebreak = 0u;
                   return;
             }
 
@@ -100,7 +100,7 @@ namespace ir_format {
             }
 
             for (auto i = 0u; i < amount; ++i)
-                  retn += format->indent.indent;
+                  retn += format->indent.indent_space;
 
             return retn;
       }
@@ -117,7 +117,6 @@ namespace ir_format {
             }
 
             buffer = indent_str + buffer;
-
             return;
       }
 
@@ -158,7 +157,7 @@ std::string luramas::ir::generate(const luramas::emitter_ir::syntax::emitter_syn
                   if (!format->indent.collapse.comment.disabled) {
 
                         /* Optimize disabled?? and comment with amount being 1?? */
-                        if (!optimizations->disabled && optimizations->comment.comment && comment_amt == 1u) {
+                        if (!optimizations->disabled && optimizations->comment.comments && comment_amt == 1u) {
 
                               /* Emit expandable comment if possible. */
 

@@ -400,7 +400,7 @@ int luaD_precall(lua_State *L, StkId func, int nresults) {
                   goto Cfunc;
             case LUA_TLCF: /* light C function */
                   f = fvalue(func);
-            Cfunc : {
+            Cfunc: {
                   int n;                              /* number of returns */
                   checkstackp(L, LUA_MINSTACK, func); /* ensure minimum stack size */
                   ci = next_ci(L);                    /* now 'enter' new function */

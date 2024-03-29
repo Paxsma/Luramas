@@ -61,7 +61,7 @@ namespace luramas {
                         set_global,       /* Set global */
                         get_global,       /* Get global */
                         set_attr,         /* Set attribute */
-                        new_table,        /* Creates table */
+                        new_table,        /* Creates/Refrence table */
                         capture,          /* Capture */
                         return_,          /* Return */
                         special_flag      /* Special instruction that porpose is too modify a flag. */
@@ -74,9 +74,22 @@ namespace luramas {
                         std::vector<luramas::il::lexer::operand_kinds> operands;      /* Operand kinds */
                         std::shared_ptr<luramas::il::disassembly> disassembly;        /* IL disassembly */
 
-                        /* Gets first operand. */
+                        /* Returns if opcode starts a scope. */
+                        bool scope_start() {
+                              return (this->kind == luramas::il::lexer::inst_kinds::for_ || this->kind == luramas::il::lexer::inst_kinds::branch_condition || this->kind == luramas::il::lexer::inst_kinds::branch);
+                        }
+
+#pragma region operand_kinds
+
+                        /* Returns if given kind exists. */
                         template <luramas::il::lexer::operand_kinds kind>
-                        std::vector<std::shared_ptr<luramas::il::arch::operand::operand>> operand_expr() {
+                        bool has_operand_kind() {
+                              return std::find(this->operands.begin(), this->operands.end(), kind) != this->operands.end();
+                        }
+
+                        /* Gets first operand target if there is multiple. */
+                        template <luramas::il::lexer::operand_kinds kind>
+                        std::vector<std::shared_ptr<luramas::il::arch::operand::operand>> operand_kind() {
 
                               std::vector<std::shared_ptr<luramas::il::arch::operand::operand>> retn;
 
@@ -88,33 +101,24 @@ namespace luramas {
                               return retn;
                         }
 
-                        /* Returns if opcode starts a scope. */
-                        bool scope_start() {
-                              return (this->kind == luramas::il::lexer::inst_kinds::for_ || this->kind == luramas::il::lexer::inst_kinds::branch_condition || this->kind == luramas::il::lexer::inst_kinds::branch);
-                        }
-
-                        /* Returns if given kind exists. */
-                        template <luramas::il::lexer::operand_kinds kind>
-                        bool has_operand_expr() {
-                              return std::find(this->operands.begin(), this->operands.end(), kind) != this->operands.end();
-                        }
-
                         /* Counts the occurance of a kind. */
                         template <luramas::il::lexer::operand_kinds kind>
-                        std::size_t count_operand_expr() {
+                        std::size_t count_operand_kind() {
                               return std::count(this->operands.begin(), this->operands.end(), kind);
                         }
 
                         /* Calls callback for every operand kind that exists in lexeme with operand and kind being arguements with no return.  */
                         template <luramas::il::lexer::operand_kinds kind>
-                        void operand_expr_callback(std::function<void(const std::shared_ptr<luramas::il::arch::operand::operand> &operand, const luramas::il::lexer::operand_kinds tt)> &callback) {
+                        void operand_kind_callback(std::function<void(const std::shared_ptr<luramas::il::arch::operand::operand> &operand, const luramas::il::lexer::operand_kinds tt)> &callback) {
 
-                              const auto operands = this->operand_expr<kind>();
+                              const auto operands = this->operand_kind<kind>();
                               for (const auto &i : operands)
                                     callback(i, kind);
 
                               return;
                         }
+
+#pragma endregion Operand Kinds
                   };
 
                   std::shared_ptr<lexeme> lexer(std::shared_ptr<luramas::il::disassembly> &disassembly);

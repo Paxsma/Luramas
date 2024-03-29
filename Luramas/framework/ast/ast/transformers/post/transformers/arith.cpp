@@ -6,10 +6,10 @@ void luramas::ast::transformers::post::arith::set_arith_exprs(std::shared_ptr<lu
       const auto all = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(ast->body->visit_inst_kinds<luramas::il::lexer::inst_kinds::arith>(true));
       for (const auto &i : all) {
 
-            if (i->lex->has_operand_expr<luramas::il::lexer::operand_kinds::kvalue>()) {
-                  i->add_expr<luramas::ast::element_kinds::arithK>();
+            if (i->lex->has_operand_kind<luramas::il::lexer::operand_kinds::kvalue>()) {
+                  i->add_elem<luramas::ast::element_kinds::expr_arithk>();
             } else {
-                  i->add_expr<luramas::ast::element_kinds::arith>();
+                  i->add_elem<luramas::ast::element_kinds::expr_arith>();
             }
       }
 

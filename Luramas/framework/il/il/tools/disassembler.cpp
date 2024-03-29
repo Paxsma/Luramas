@@ -299,8 +299,8 @@ const char *const luramas::il::disassembler::mnemonic_string(const luramas::il::
                   return "addupvalue";
             }
 
-            case luramas::il::arch::opcodes::OP_INITVARARGS: {
-                  return "initvarargs";
+            case luramas::il::arch::opcodes::OP_RESUME: {
+                  return "resume";
             }
 
             case luramas::il::arch::opcodes::OP_GETVARARGS: {
@@ -688,8 +688,8 @@ const char *const luramas::il::disassembler::mnemonic_hint_string(const luramas:
                   return "Pops register from top of the stack.";
             }
 
-            case luramas::il::arch::opcodes::OP_INITVARARGS: {
-                  return "Initiates varargs.";
+            case luramas::il::arch::opcodes::OP_RESUME: {
+                  return "Initiates script.";
             }
 
             case luramas::il::arch::opcodes::OP_GETVARARGS: {

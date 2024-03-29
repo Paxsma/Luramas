@@ -12,16 +12,20 @@
 #ifndef luramas_debug
 #define luramas_debug
 
+#define luramas_debug_all true /* Parent macro for all debugging */
+#if luramas_debug_all
+
 #include "color.hpp"
 
-#define debug_functions true /* Enable debug functions */
+#define debug_functions true        /* Enable debug functions */
+#define color_debug_functions false /* Enable color for debug functions */
 
 /* Used mostly in highly voilatile regions. */
-#define universal_debug true /* Enables universal debug good for debugging. */
+#define universal_debug false /* Enables universal debug good for debugging. */
 #if universal_debug
 
 /* 1st arg can be str, va_list has too be cstr. */
-#if defined(_WIN32) || defined(_WIN64)
+#if color_debug_functions && (defined(_WIN32) || defined(_WIN64))
 
 /* Generic */
 #define debug_line(str, ...)                                                                                                                                                                                 \
@@ -103,5 +107,16 @@
 #define debug_close(str, ...)
 
 #endif
+
+#endif
+
+#else
+
+#define debug_init(str, ...)
+#define debug_line(str, ...)
+#define debug_warning(str, ...)
+#define debug_success(str, ...)
+#define debug_result(str, ...)
+#define debug_close(str, ...)
 
 #endif

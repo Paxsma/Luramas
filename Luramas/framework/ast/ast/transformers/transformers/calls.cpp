@@ -12,37 +12,37 @@ void luramas::ast::transformers::calls::set_routines(std::shared_ptr<luramas::as
             /* Namecall gets special treatment. */
             if (prev->lex->disassembly->op == luramas::il::arch::opcodes::OP_SELF) {
 
-                  const auto data = prev->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
-                  const auto data_1 = prev->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
+                  const auto data = prev->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
+                  const auto data_1 = prev->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
 
                   /* Call first operand will be the same as previous. */
                   if (data == data_1) {
-                        ast->body->visit_previous_dest_register(prev->address, node->lex->disassembly->operands.front()->dis.reg)->add_expr<luramas::ast::element_kinds::call_routine_start>(); /* Call start */
+                        ast->body->visit_previous_dest_register(prev->address, node->lex->disassembly->operands.front()->dis.reg)->add_safe<luramas::ast::element_kinds::desc_call_routine_start>(); /* Call start */
                   } else {
 
-                        const auto args = node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().front()->dis.integer - 1u;
+                        const auto args = node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.integer - 1u;
 
                         if (args) {
                               /* Set previous as call register + 2(1 is reserved, other is slot) */
-                              ast->body->visit_previous_dest_register(node->address, node->lex->disassembly->operands.front()->dis.reg + 2u)->add_expr<luramas::ast::element_kinds::call_routine_start>(); /* Call start */
+                              ast->body->visit_previous_dest_register(node->address, node->lex->disassembly->operands.front()->dis.reg + 2u)->add_safe<luramas::ast::element_kinds::desc_call_routine_start>(); /* Call start */
                         } else {
                               /* No args namecall is end. */
-                              prev->add_expr<luramas::ast::element_kinds::call_routine_start>(); /* Call start */
+                              prev->add_safe<luramas::ast::element_kinds::desc_call_routine_start>(); /* Call start */
                         }
                   }
 
             } else {
 
                   /* Next is end and has args fix prev. */
-                  if (ast->body->visit_next(prev) == node && node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().front()->dis.val) {
+                  if (ast->body->visit_next(prev) == node && node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val) {
 
                         prev = ast->body->visit_previous_dest_register(prev->address, node->lex->disassembly->operands.front()->dis.reg + 1);
                   }
 
-                  prev->add_expr<luramas::ast::element_kinds::call_routine_start>(); /* Call start */
+                  prev->add_safe<luramas::ast::element_kinds::desc_call_routine_start>(); /* Call start */
             }
 
-            node->add_expr<luramas::ast::element_kinds::call_routine_end>(); /* Call end. */
+            node->add_safe<luramas::ast::element_kinds::desc_call_routine_end>(); /* Call end. */
       }
 
       return;
@@ -64,9 +64,9 @@ void luramas::ast::transformers::calls::set_multret_routines(std::shared_ptr<lur
             routine_dec_lv(node, routine);
 
             /* Call? */
-            if (!routine && node->lex->kind == luramas::il::lexer::inst_kinds::ccall && !node->has_expr(luramas::ast::element_kinds::locvar)) {
+            if (!routine && node->lex->kind == luramas::il::lexer::inst_kinds::ccall && !node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
-                  auto retn = node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().back()->dis.val;
+                  auto retn = node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().back()->dis.val;
                   const auto start = node->lex->disassembly->operands.front()->dis.reg;
 
                   if (retn > 1) {
@@ -81,9 +81,9 @@ void luramas::ast::transformers::calls::set_multret_routines(std::shared_ptr<lur
             }
 
             /* Looks for regs. */
-            if (!check_regs.empty() && node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::source>()) {
+            if (!check_regs.empty() && node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::source>()) {
 
-                  const auto sources = node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>();
+                  const auto sources = node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>();
                   for (const auto &operand : sources) {
 
                         const auto reg = operand->dis.reg;
@@ -91,15 +91,12 @@ void luramas::ast::transformers::calls::set_multret_routines(std::shared_ptr<lur
 
                               /* First */
                               if (first) {
-                                    node->add_expr<luramas::ast::element_kinds::call_multret_start>();
+                                    node->add_elem<luramas::ast::element_kinds::call_multret_start>();
                                     first = false;
+                              } else if (check_regs.size() == 1u) {
+                                    node->add_elem<luramas::ast::element_kinds::call_multret_end>();
                               } else {
-
-                                    if (check_regs.size() == 1u) {
-                                          node->add_expr<luramas::ast::element_kinds::call_multret_end>();
-                                    } else {
-                                          node->add_expr<luramas::ast::element_kinds::call_multret_member>();
-                                    }
+                                    node->add_elem<luramas::ast::element_kinds::call_multret_member>();
                               }
 
                               check_regs.erase(std::remove(check_regs.begin(), check_regs.end(), reg), check_regs.end());
@@ -114,10 +111,10 @@ void luramas::ast::transformers::calls::set_multret_routines(std::shared_ptr<lur
 bool luramas::ast::transformers::calls::reg_arg(std::shared_ptr<luramas::ast::ast> &ast, const std::shared_ptr<luramas::ast::node> &call, const std::uint16_t target) {
 
       /* Call */
-      if (call->lex->kind == luramas::il::lexer::inst_kinds::ccall && call->lex->has_operand_expr<luramas::il::lexer::operand_kinds::dest>()) {
+      if (call->lex->kind == luramas::il::lexer::inst_kinds::ccall && call->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>()) {
 
-            const auto dest = call->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
-            const auto arg = call->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+            const auto dest = call->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
+            const auto arg = call->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
 
             if (arg) {
                   return ((1u + dest) <= target && (1u + dest + arg) >= target);

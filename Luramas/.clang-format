@@ -7,7 +7,6 @@ BinPackArguments: 'false'
 BinPackParameters: 'false'
 ColumnLimit: '0'
 IndentCaseLabels: 'true'
-IndentPPDirectives: BeforeHash
 IndentWidth: '6'
 NamespaceIndentation: All
 ReflowComments: 'false'

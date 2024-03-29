@@ -53,7 +53,6 @@ namespace luramas {
                               } else {
                                     buffer += data;
                               }
-
                               return;
                         }
 

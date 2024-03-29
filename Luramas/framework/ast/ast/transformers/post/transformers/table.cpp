@@ -6,7 +6,7 @@ void luramas::ast::transformers::post::table::set_indexs(std::shared_ptr<luramas
       for (const auto &i : all) {
 
             if (i->lex->kind == luramas::il::lexer::inst_kinds::table_get) {
-                  i->add_expr<luramas::ast::element_kinds::table_index>();
+                  i->add_elem<luramas::ast::element_kinds::table_index>();
             }
       }
 
@@ -22,7 +22,7 @@ void luramas::ast::transformers::post::table::fill_elements(std::shared_ptr<lura
             for (const auto &node : range) {
 
                   if (node->lex->kind == luramas::il::lexer::inst_kinds::set_table) {
-                        node->add_existance<luramas::ast::element_kinds::table_element>();
+                        node->add_safe<luramas::ast::element_kinds::table_element>();
                   }
             }
       }

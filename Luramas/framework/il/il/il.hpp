@@ -199,6 +199,22 @@ namespace luramas {
 #endif
             };
 
+            /* IL validation error */
+            struct commit_error {
+
+                  /* Throw error */
+                  void commit(const std::shared_ptr<disassembly> &il, const char *error) {
+                        this->il = il;
+                        this->error = error;
+                        this->is_error = true;
+                        return;
+                  }
+
+                  std::shared_ptr<disassembly> il;
+                  const char *error = NULL;
+                  bool is_error = false;
+            };
+
             /* IL class */
             class ilang {
 
@@ -208,11 +224,11 @@ namespace luramas {
                         luramas::il::arch::kval_kinds type = luramas::il::arch::kval_kinds::none;
 
                         struct boolean {
-                              bool boolean = false;
+                              bool b = false;
                         } boolean;
 
                         struct integer {
-                              double integer = 0.0;
+                              double i = 0.0;
                               std::string str = ""; /* Formatted */
                         } integer;
 
@@ -258,7 +274,7 @@ namespace luramas {
                                           break;
                                     }
                                     case luramas::il::arch::kval_kinds::boolean: {
-                                          retn = (this->boolean.boolean) ? "true" : "false";
+                                          retn = (this->boolean.b) ? "true" : "false";
                                           break;
                                     }
                                     case luramas::il::arch::kval_kinds::integer: {
@@ -395,6 +411,37 @@ namespace luramas {
                         return;
                   }
 
+                  /* Returns IL dump */
+                  std::string dump() {
+
+                        std::string result = "IL Dump:\nOriginal";
+
+                        /* Get instruction with the most characters. */
+                        auto largest = this->dis.front()->disassemble().length();
+                        for (const auto &i : this->dis)
+                              if (auto l = i->data->disassemble().length(); largest < l) {
+                                    largest = l;
+                              }
+                        largest += 3u;
+
+                        /* Format */
+                        result += std::string(largest - sizeof("Original:") /* Remove original */, ' ') + "IL:\n";
+
+                        /* Append disassembly */
+                        for (const auto &i : this->dis) {
+
+                              std::string append = "";
+
+                              if (i->data != nullptr) {
+                                    append += i->data->disassemble();
+                              }
+
+                              result += append + std::string(largest - append.length(), ' ') + i->disassemble() + "\n";
+                        }
+
+                        return result;
+                  }
+
 #pragma region metadata
 
                   struct metadata {
@@ -432,18 +479,18 @@ namespace luramas {
 #pragma endregion
 
                   /* Validate IL makes sures there is no error in IL disassembly, returns error if any. */
-                  const char *const validate() {
+                  luramas::il::commit_error validate() {
 
                         auto valid = this->validate_operands();
-                        if (valid != NULL) {
+                        if (valid.is_error) {
                               return valid;
                         }
 
-                        if ((valid = this->validate_instructions()) != NULL) {
+                        if ((valid = this->validate_instructions()).is_error) {
                               return valid;
                         }
 
-                        return NULL;
+                        return luramas::il::commit_error();
                   }
 
                 private:
@@ -452,13 +499,13 @@ namespace luramas {
 #pragma region validate
 
                   /* Throws error if IL is not valid. */
-                  void validate(const char *const valid);
+                  void validate(const luramas::il::commit_error &valid);
 
                   /* Validates operands for IL. */
-                  const char *const validate_operands();
+                  commit_error validate_operands();
 
                   /* Validates instructions for IL. */
-                  const char *const validate_instructions();
+                  commit_error validate_instructions();
 
 #pragma endregion Internal validation for IL does not need a manager.
 

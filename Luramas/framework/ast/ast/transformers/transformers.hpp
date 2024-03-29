@@ -42,16 +42,34 @@ namespace luramas {
 
                   } // namespace calls
 
+                  namespace returns {
+
+                        /* Set return element kinds. */
+                        void set(std::shared_ptr<luramas::ast::ast> &ast);
+
+                  } // namespace returns
+
+                  namespace track {
+
+                        void set(std::shared_ptr<luramas::ast::ast> &ast);
+
+                  }
+
+                  namespace labels {
+
+                  }
+
                   namespace scopes {
 
                         namespace scope_data {
 
                               /* Scoping vector */
 
-                              /* Creates scopes based on idx, which is used by unordered map. (Start = next from jump, Jump target = previous from jump) */
+                              /* Creates scopes based on index, which is used by unordered map. (Start = next instruction from jump, Jump target = previous from jump) */
                               class scope {
 
                                   public:
+                                    /* Change scope based on next instruction from jump. */
                                     std::vector<std::pair<std::shared_ptr<luramas::ast::node> /* Begin */, std::shared_ptr<luramas::ast::node> /* End */>> operator[](const std::shared_ptr<luramas::ast::node> &start) {
 
                                           std::vector<std::pair<std::shared_ptr<luramas::ast::node> /* Begin */, std::shared_ptr<luramas::ast::node> /* End */>> retn;
@@ -61,7 +79,6 @@ namespace luramas {
                                           for (const auto &i : this->data) {
 
                                                 if ((parent_scope.first == NULL || parent_scope.first->address < std::get<0>(i)->address) && std::get<0>(i)->address <= start->address && std::get<1>(i)->address >= start->address) {
-
                                                       parent_scope = i;
                                                 }
                                           }
@@ -83,6 +100,7 @@ namespace luramas {
                                           return retn;
                                     }
 
+                                    /* Set scope */
                                     void operator=(const std::vector<std::shared_ptr<luramas::ast::node>> &dism /* All nodes in scope */) {
 
                                           if (this->linked_ast == nullptr) {
@@ -98,12 +116,12 @@ namespace luramas {
                                                 switch (i->lex->disassembly->op) {
 
                                                       case luramas::il::arch::opcodes::OP_FORLOOPN: {
-                                                            addr_scopes.emplace_back(std::make_pair(this->linked_ast->body->visit_addr(i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr), i));
+                                                            addr_scopes.emplace_back(std::make_pair(this->linked_ast->body->visit_addr(i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr), i));
                                                             break;
                                                       }
 
                                                       case luramas::il::arch::opcodes::OP_FORLOOPG: {
-                                                            addr_scopes.emplace_back(std::make_pair(this->linked_ast->body->visit_addr(i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr), i));
+                                                            addr_scopes.emplace_back(std::make_pair(this->linked_ast->body->visit_addr(i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr), i));
                                                             break;
                                                       }
 
@@ -119,7 +137,7 @@ namespace luramas {
                                                 if (node->lex->kind == luramas::il::lexer::inst_kinds::branch_condition) {
 
                                                       /* Scope isnt jumpback? */
-                                                      const auto ref_addr = node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                                                      const auto ref_addr = node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
                                                       if (!this->jump || (this->jump && ref_addr > node->address)) {
 
                                                             /* Hit */
@@ -141,7 +159,7 @@ namespace luramas {
 
                                                 /* jump ?? */
                                                 if (node->lex->kind == luramas::il::lexer::inst_kinds::branch) {
-                                                      const auto ref_addr = node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                                                      const auto ref_addr = node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
                                                       addr_scopes.emplace_back(std::make_pair(((ref_addr == (node->lex->disassembly->len + node->address) || node == dism.back()) ? node : (*(&node + 1))), this->linked_ast->body->visit_previous_addr(this->linked_ast->body->visit_addr(ref_addr)->address)));
                                                 }
 
@@ -155,7 +173,6 @@ namespace luramas {
                                           }
 
                                           this->data.emplace_back(std::make_pair(dism.front(), dism.back()));
-
                                           return;
                                     }
 
@@ -165,7 +182,7 @@ namespace luramas {
                                           return;
                                     }
 
-                                    std::vector<std::pair<std::shared_ptr<luramas::ast::node> /* Begin */, std::shared_ptr<luramas::ast::node> /* End */>> get() {
+                                    std::vector<std::pair<std::shared_ptr<luramas::ast::node> /* Begin */, std::shared_ptr<luramas::ast::node> /* End */>> get() const {
                                           return this->data;
                                     }
 
@@ -216,8 +233,7 @@ namespace luramas {
                                     }
 
                                     t idx_get(const std::size_t key) {
-                                          const auto d_raw = this->raw().front();
-                                          return d_raw[key];
+                                          return this->raw().front()[key];
                                     }
 
                                     /* Sets scope */
@@ -275,9 +291,7 @@ namespace luramas {
                                           std::vector<t> retn;
 
                                           for (const auto &i : this->scopes) {
-
                                                 const auto vect = this->data[i];
-
                                                 retn.insert(retn.end(), vect.begin(), vect.end());
                                           }
 
@@ -290,12 +304,12 @@ namespace luramas {
                                   private:
                                     std::vector<std::shared_ptr<luramas::ast::node> /* Begin*/> scopes;
                                     std::unordered_map<std::shared_ptr<luramas::ast::node> /* Begin */, std::vector<t> /* Data */> data;
-                                    class scope &linked;
+                                    scope &linked;
                               };
 
                               /* Every unordered map is homogenous for repective scope. */
                               template <typename keyt, typename valuet>
-                              class scope_umap {
+                              class scope_unorderedmap {
 
                                   public:
                                     std::vector<std::unordered_map<keyt, valuet>> get() {
@@ -308,7 +322,7 @@ namespace luramas {
                                           return retn;
                                     }
 
-                                    scope_umap(class scope &s)
+                                    scope_unorderedmap(class scope &s)
                                         : linked(s) {
 
                                           for (const auto &i : this->linked.get())
@@ -331,12 +345,12 @@ namespace luramas {
 
                                     std::vector<std::unordered_map<keyt, valuet>> raw() {
 
-                                          std::vector<t> vect;
+                                          std::vector<std::unordered_map<keyt, valuet>> result;
 
                                           for (const auto &i : this->scopes)
-                                                vect.emplace_back(this->data[i]);
+                                                result.emplace_back(this->data[i]);
 
-                                          return vect;
+                                          return result;
                                     }
 
                                     void insert(const std::pair<keyt, valuet> &p) {
@@ -399,54 +413,51 @@ namespace luramas {
 
                   namespace registers {
 
+                        /* Sets register scope element kinds.*/
+                        void set_sources_scope_element(std::shared_ptr<luramas::ast::ast> &ast);
+
+                        /* Sets Right/Left value scope element kinds.*/
+                        void set_sources_left_right_element(std::shared_ptr<luramas::ast::ast> &ast);
+
+                        /* Sets linked exprs (Dependent on set arguements functions). */
+                        void set_statement_expr(std::shared_ptr<luramas::ast::ast> &ast);
+
                         /* Sees if destination is logical in scope. */
                         bool logical_dest_register(std::shared_ptr<luramas::ast::ast> &ast, std::shared_ptr<luramas::ast::node> start, const std::int16_t target);
 
                         /* 
-            
-                These functions can't go inside lexer as it depends on some other data for it too work constructed by ast. 
-            
-            */
-                        /* Gets list of all dests registers being set. **Dependent on for loop data** */
-                        std::vector<std::uint16_t> get_dest_list(std::shared_ptr<luramas::ast::ast> &ast, const std::shared_ptr<luramas::ast::node> &node);
-
-                        /* Gets list of all source registers being set. */
-                        std::vector<std::uint16_t> get_source_list(std::shared_ptr<luramas::ast::ast> &ast, const std::shared_ptr<luramas::ast::node> &node);
-
-                        /* Sets source scope exprs. */
-                        void set_source_scope_expr(std::shared_ptr<luramas::ast::ast> &ast);
-
-                        /* Register is used twice by either source or dest without being reset by either vice versa. */
-                        bool reg_used_twice(std::shared_ptr<luramas::ast::ast> &ast, const std::shared_ptr<luramas::ast::node> &start, const std::uint16_t target, const bool same_start = false /* Dest hit and start are the same? */);
-
-                        /* Sets linked exprs (Dependent on set arguements functions). */
-                        void set_statement_expr(std::shared_ptr<luramas::ast::ast> &ast);
+                            Detects if register is used twice by either source or dest without being reset by either vice versa.
+                            Returns detection based on scope i.e. Out of scope return false else true.
+                        */
+                        bool detect_double_usage_without_reset(std::shared_ptr<luramas::ast::ast> &ast, const std::shared_ptr<luramas::ast::node> &start, const std::uint16_t target);
 
                   } // namespace registers
 
                   namespace upvalues {
 
+                        /* Set upvalues */
                         void set(std::shared_ptr<luramas::ast::ast> &ast);
 
-                  }
+                  } // namespace upvalues
 
                   namespace closure {
 
-                        void set_closure_info(const std::shared_ptr<luramas::ast::ast> &current_closure, const std::size_t child_closure_id);
+                        /* Sets closure information */
+                        void process_closure_info(const std::shared_ptr<luramas::ast::ast> &current_closure, const std::size_t child_closure_id);
 
-                  }
+                  } // namespace closure
 
                   namespace branches {
 
-                        /* Set logical operations in routine with given range. */
-                        void set(std::shared_ptr<luramas::ast::ast> &ast, const std::uintptr_t begin, const std::uintptr_t end, const std::vector<std::uintptr_t> dead /* Always opposite and when hit. */, const std::int16_t logical_operation_target = -1 /* Used for ignoring ands/ors. */, const bool check_loops = false /* Checks jumps too see if they lead too loop by expr and preform opposite. */, const bool last_include = false /* Includes last compare as or. */, const bool logical_operation = false /* ??? */);
-
-                        /* Sets valid branch routines for a range with expr: "condition_routine" */
-                        void set_valid_branch_routine(std::shared_ptr<luramas::ast::ast> &ast);
+                        /* 
+                            Sets ast element: "conditional" based on certain criteria for the branch.
+                            It analyzes the branch to see if cmp register are use only once post compare and sets results based on that.
+                        */
+                        void set_branch_safety_analyzer(std::shared_ptr<luramas::ast::ast> &ast);
 
                         /*
 
-			* Sets ifs/elseifs/elses (Logical routines loops etc must be set first).
+			* Sets ifs/elseifs/elses (Logical routines, loops, etc must be set first).
 
 			 Logical routines does all of the dirty work already if you want too know if it's if see if end is a compare.
 
@@ -454,8 +465,17 @@ namespace luramas {
 		*/
                         void set_branch_statements(std::shared_ptr<luramas::ast::ast> &ast);
 
-                        /* Sets jumpout exprs. */
-                        void set_jumpout_exprs(std::shared_ptr<luramas::ast::ast> &ast);
+                        /* Sets jumpout element kinds. */
+                        void set_jumpout_elements(std::shared_ptr<luramas::ast::ast> &ast);
+
+                        /* Set logical operations in routine with given range. */
+                        void process_nested_logical_conditions(std::shared_ptr<luramas::ast::ast> &ast, const std::uintptr_t begin, const std::uintptr_t end, const std::vector<std::uintptr_t> dead /* Always opposite and when hit. */, const std::int16_t logical_operation_target = -1 /* Used for ignoring ands/ors. */, const bool check_loops = false /* Checks jumps too see if they lead too loop by expr and preform opposite. */, const bool last_include = false /* Includes last compare as or. */, const bool logical_operation = false /* ??? */);
+
+                        /*                      
+                            * Finds biggest jump out with start and end nodes, and so on. 
+                            * Returns nullptr if there is none, else returns taken jump node.
+                        */
+                        std::shared_ptr<luramas::ast::node> find_jump_out(std::shared_ptr<luramas::ast::ast> &ast, const std::shared_ptr<luramas::ast::node> start, const std::shared_ptr<luramas::ast::node> end);
 
                   } // namespace branches
 
@@ -466,7 +486,7 @@ namespace luramas {
 			get placed as a dest. This can be used too find it's routine by getting the preceeding dest of the start and the end being the concat we can determine
 			the routine and where it starts and end.
 		*/
-                        void set_routines(std::shared_ptr<luramas::ast::ast> &ast);
+                        void set_string_routines(std::shared_ptr<luramas::ast::ast> &ast);
 
                   } // namespace concats
 
@@ -529,9 +549,6 @@ namespace luramas {
 
                         /* Sets table elements. */
                         void set_routines(std::shared_ptr<luramas::ast::ast> &ast);
-
-                        /* Sets table exprs. */
-                        void set_table_exprs(std::shared_ptr<luramas::ast::ast> &ast);
 
                         /* Sets every table end in every table routine node too address ending of table. */
                         void set_node_end(std::shared_ptr<luramas::ast::ast> &ast);

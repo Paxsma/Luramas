@@ -3,11 +3,11 @@
 ## Table of Contents
 
 * [Description](#Description)
-* [Examples](../../examples) in examples/
+* [Examples](../../examples)
 * [Architecture](architecture.md)
 * [Optable](op_table.md)
 * [Lifting Code](lifting.md)
-* [Structure](../../framework/il/il/il.hpp) in framework/il/il/il.hpp
+* [Structure](../../framework/il/il/il.hpp)
 * [Visual representation](#Visual-Representation)
 * [Changing Targets](#Changing-Targets)
 * [Virtual Functions](virtual_functions.md)

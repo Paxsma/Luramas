@@ -32,11 +32,20 @@ namespace luramas {
                   all /* Debug functions macro must be true for AST. */
             };
 
-            struct node {
+            struct node : std::enable_shared_from_this<node> {
 
                   std::uintptr_t address = 0u; /* Address */
 
                   std::vector<std::pair<element_kinds, std::size_t /* Count usally used for ends, repeat, etc. */>> expr = {{element_kinds::lex, 0u}}; /* Expression types. (Follows order) *All will get emmited(str). */
+
+                  std::shared_ptr<luramas::il::lexer::lexeme> lex; /* Node lexeme data. Has all the detailed information. */
+
+                  std::shared_ptr<node> sub_node = nullptr;             /* When a move instruction is hit this will be the source node(mutable by for loop scopes(preps or jumptoo if no prep)). */
+                  std::vector<std::shared_ptr<node>> dest_nodes_init;   /* Where dests where intialy initialized(mutable by for loop scopes). (MAY BE UNSORTED) */
+                  std::vector<std::shared_ptr<node>> source_nodes_init; /* Where sources where intialy initialized(mutable by for loop scopes). (MAY BE UNSORTED)  */
+                  std::vector<std::shared_ptr<node>> source_nodes;      /* If a instruction has source/reg operands with regs it will get when those regs where last set(Can be init, not arg). (MAY BE UNSORTED) */
+
+#pragma region node_extra
 
                   /* Convert destination to scoped? */
                   struct variables {
@@ -90,19 +99,24 @@ namespace luramas {
                   /* Binary operation kind. */
                   luramas::ast::bin_kinds bin_kind = luramas::ast::bin_kinds::nothing;
 
-                  std::shared_ptr<luramas::il::lexer::lexeme> lex; /* Node lexeme data. Has all the detailed information. */
+#pragma endregion Extra data for the node
 
-                  /* Special */
-                  std::shared_ptr<node> sub_node = nullptr;             /* When a move instruction is hit this will be the source node(mutable by for loop scopes(preps or jumptoo if no prep)). */
-                  std::vector<std::shared_ptr<node>> dest_nodes_init;   /* Where dests where intialy initialized(mutable by for loop scopes). (MAY BE UNSORTED) */
-                  std::vector<std::shared_ptr<node>> source_nodes_init; /* Where sources where intialy initialized(mutable by for loop scopes). (MAY BE UNSORTED)  */
-                  std::vector<std::shared_ptr<node>> source_nodes;      /* If a instruction has source/reg operands with regs it will get when those regs where last set(Can be init, not arg). (MAY BE UNSORTED) */
+#pragma region node_functions
 
-                  /* Node functions */
+#pragma region node_elements
 
-                  /* Appends expr */
+                  /* Element kind exists? */
+                  bool has_elem(const element_kinds type) {
+                        for (const auto &i : this->expr)
+                              if (i.first == type) {
+                                    return true;
+                              }
+                        return false;
+                  }
+
+                  /* Appends element kind */
                   template <element_kinds type>
-                  void add_expr(const std::size_t count = 1u, const element ele = element::back, const std::size_t pos = 0u /* Optional positon overrides ele. */) {
+                  void add_elem(const std::size_t count = 1u, const element ele = element::back, const std::size_t pos = 0u /* Optional positon overrides ele. */) {
 
                         if (!count) {
                               return;
@@ -131,8 +145,8 @@ namespace luramas {
                         return;
                   }
 
-                  /* Appends with nonconsant type. */
-                  void add_expr_tt(const element_kinds type, const std::size_t count = 1u, const element ele = element::back, const std::size_t pos = 0u /* Optional positon overrides elee. */) {
+                  /* Appends element kind with nonconsant type. */
+                  void add_elem(const element_kinds type, const std::size_t count = 1u, const element ele = element::back, const std::size_t pos = 0u /* Optional positon overrides elee. */) {
 
                         if (!count) {
                               return;
@@ -161,52 +175,33 @@ namespace luramas {
                         return;
                   }
 
-                  /* Remove expr */
+                  /* Adds element kind if it does not exist in node. */
                   template <element_kinds type>
-                  void remove_expr() {
+                  void add_safe(const std::size_t count = 1u, const element ele = element::back) {
 
-                        /* Replace only lex with type. */
-                        if (this->expr.size() == 1u && this->expr.front().first == type) {
-                              this->expr.front().first = luramas::ast::element_kinds::lex;
-                              this->expr.front().second = 1u;
-                        } else {
-
-                              for (auto i = 0u; i < this->expr.size(); i++) {
-
-                                    const auto expr = this->expr[i];
-
-                                    if (expr.first == type) {
-                                          this->expr.erase(this->expr.begin() + i);
-                                          break;
-                                    }
-                              }
+                        if (!this->has_elem(type)) {
+                              this->add_elem<type>(count, ele);
                         }
 
                         return;
                   }
 
-                  /* Remove expr */
+                  /* Remove element kind */
                   template <element_kinds type>
-                  std::pair<element_kinds, std::size_t> get_expr() {
+                  void remove_elem() {
 
-                        for (const auto &expr : this->expr)
-                              if (expr.first == type) {
-                                    return expr;
+                        auto found = std::find_if(this->expr.begin(), this->expr.end(), [](const auto &expr) {
+                              return expr.first == type;
+                        });
+
+                        /* Replace only lex with type. */
+                        if (found != this->expr.end()) {
+                              if (this->expr.size() == 1u) {
+                                    found->first = luramas::ast::element_kinds::lex;
+                                    found->second = 1u;
+                              } else {
+                                    this->expr.erase(found);
                               }
-
-#if DEBUG_AST_DISPLAY_WARNINGS
-                        std::printf("[WARNING] Returning dead expr for get_expr.\n");
-#endif
-
-                        return std::make_pair(element_kinds::lex, 1u);
-                  }
-
-                  /* Adds expression if type isn't a expr. **Used when their should be one garunteed expr of one type.**  */
-                  template <element_kinds type>
-                  void add_existance(const std::size_t count = 1u, const element ele = element::back) {
-
-                        if (!this->has_expr(type)) {
-                              this->add_expr<type>(count, ele);
                         }
 
                         return;
@@ -226,65 +221,74 @@ namespace luramas {
                         return;
                   }
 
-                  /* Removal all target (Expr/Stat/Descriptor). */
+                  /* Remove all target element kinds. */
                   template <element_kinds target>
-                  void remove_all_expr() {
+                  void remove_all_elem() {
 
-                        while (this->has_expr(target)) {
-                              this->remove_expr<target>();
+                        while (this->has_elem(target)) {
+                              this->remove_elem<target>();
                         }
 
                         return;
                   }
 
-                  /* Expr/Stat/Descriptor kind exists? */
-                  bool has_expr(const element_kinds type) {
+                  /* Get element kind pair */
+                  template <element_kinds type>
+                  std::pair<element_kinds, std::size_t> get_elem() {
+
+                        for (const auto &expr : this->expr)
+                              if (expr.first == type) {
+                                    return expr;
+                              }
+
+#if DEBUG_AST_DISPLAY_WARNINGS
+                        std::printf("[WARNING] Returning dead expr for get_elem.\n");
+#endif
+
+                        return std::make_pair(element_kinds::lex, 1u);
+                  }
+
+                  /* Counts element kind member total. */
+                  template <element_kinds type>
+                  std::uintptr_t count_elem() {
+                        std::uintptr_t count = 0u;
                         for (const auto &i : this->expr)
                               if (i.first == type) {
-                                    return true;
+                                    count += i.second;
                               }
-                        return false;
-                  }
-
-                  /* Counts (Expr/Stat/Descriptor) count total. */
-                  template <element_kinds type>
-                  std::uintptr_t count_expr() {
-                        std::uintptr_t count = 0u;
-                        for (const auto &i : this->expr)
-                              if (i.first == type)
-                                    count += i.second;
                         return count;
                   }
 
-                  /* Counts (Expr/Stat/Descriptor) count total with non static type. */
-                  std::uintptr_t count_expr(const element_kinds type) {
+                  /* Counts element kind total with non static type. */
+                  std::uintptr_t count_elem(const element_kinds type) {
                         std::uintptr_t count = 0u;
                         for (const auto &i : this->expr)
-                              if (i.first == type)
+                              if (i.first == type) {
                                     count += i.second;
+                              }
                         return count;
                   }
 
-                  /* Counts (Expr/Stat/Descriptor) member total. */
+                  /* Counts element kind member total. */
                   template <element_kinds type>
-                  std::uintptr_t count_expr_member() {
+                  std::uintptr_t count_elem_member() {
                         std::uintptr_t count = 0u;
                         for (const auto &i : this->expr)
-                              if (i.first == type)
+                              if (i.first == type) {
                                     count++;
+                              }
                         return count;
                   }
 
-                  /* Collapses (Expr/Stat/Descriptor) by count. */
-                  void collapse_expr() {
+                  /* Collapses element kinds by count. */
+                  void collapse_elem() {
 
                         for (auto i = 0u; i < this->expr.size(); ++i) {
 
                               auto expr = this->expr[i];
 
                               while (expr.second > 1u) {
-
-                                    this->add_expr_tt(expr.first, 1u, luramas::ast::element::back, i);
+                                    this->add_elem(expr.first, 1u, luramas::ast::element::back, i);
                                     --expr.second;
                               }
                         }
@@ -292,8 +296,10 @@ namespace luramas {
                         return;
                   }
 
+#pragma endregion Node elements
+
                   /* Gets final sub node. */
-                  std::shared_ptr<node> get_sub_node() {
+                  std::shared_ptr<node> get_sub_node() const {
 
                         auto sub = this->sub_node;
 
@@ -307,351 +313,13 @@ namespace luramas {
                         return sub;
                   }
 
+#pragma region debug
+
 #if DEBUG_AST_NODE
 
                   /* Turns expr pair into a string. */
-                  std::string expr_str(const std::pair<element_kinds, std::size_t> &p) {
-
-                        std::string retn = "";
-
-                        switch (p.first) {
-
-                              case element_kinds::lex: {
-                                    retn += "lex";
-                                    break;
-                              }
-
-                              case element_kinds::exit_post: {
-                                    retn += "exit_post";
-                                    break;
-                              }
-                              case element_kinds::exit_pre: {
-                                    retn += "exit_pre";
-                                    break;
-                              }
-                              case element_kinds::exit_dead: {
-                                    retn += "exit_dead";
-                                    break;
-                              }
-
-                              case element_kinds::arith: {
-                                    retn += "arith";
-                                    break;
-                              }
-                              case element_kinds::arithK: {
-                                    retn += "arithK";
-                                    break;
-                              }
-
-                              case element_kinds::locvar: {
-                                    retn += "locvar";
-                                    break;
-                              }
-                              case element_kinds::locvar_upvalue: {
-                                    retn += "locvar_upvalue";
-                                    break;
-                              }
-                              case element_kinds::locvar_multret: {
-                                    retn += "locvar_multret";
-                                    break;
-                              }
-
-                              case element_kinds::statement_begin: {
-                                    retn += "statement_begin";
-                                    break;
-                              }
-                              case element_kinds::statement_member: {
-                                    retn += "statement_member";
-                                    break;
-                              }
-                              case element_kinds::statement_end: {
-                                    retn += "statement_end";
-                                    break;
-                              }
-                              case element_kinds::statement_single: {
-                                    retn += "statement_single";
-                                    break;
-                              }
-
-                              case element_kinds::table: {
-                                    retn += "table";
-                                    break;
-                              }
-
-                              case element_kinds::call_multret_start: {
-                                    retn += "call_multret_start";
-                                    break;
-                              }
-                              case element_kinds::call_multret_member: {
-                                    retn += "call_multret_member";
-                                    break;
-                              }
-                              case element_kinds::call_multret_end: {
-                                    retn += "call_multret_end";
-                                    break;
-                              }
-
-                              case element_kinds::for_iv_start: {
-                                    retn += "for_iv_start";
-                                    break;
-                              }
-                              case element_kinds::for_iv_end: {
-                                    retn += "for_iv_end";
-                                    break;
-                              }
-                              case element_kinds::for_start: {
-                                    retn += "for_start";
-                                    break;
-                              }
-                              case element_kinds::for_end: {
-                                    retn += "for_end";
-                                    break;
-                              }
-                              case element_kinds::for_n_start: {
-                                    retn += "for_n_start";
-                                    break;
-                              }
-                              case element_kinds::for_n_end: {
-                                    retn += "for_n_end";
-                                    break;
-                              }
-                              case element_kinds::for_prep: {
-                                    retn += "for_prep";
-                                    break;
-                              }
-
-                              case element_kinds::source_inside_scope: {
-                                    retn += "source_inside_scope";
-                                    break;
-                              }
-                              case element_kinds::source_outside_scope: {
-                                    retn += "source_outside_scope";
-                                    break;
-                              }
-
-                              case element_kinds::repeat_: {
-                                    retn += "repeat";
-                                    break;
-                              }
-                              case element_kinds::while_: {
-                                    retn += "while";
-                                    break;
-                              }
-                              case element_kinds::while_end: {
-                                    retn += "while_end";
-                                    break;
-                              }
-                              case element_kinds::until_: {
-                                    retn += "until";
-                                    break;
-                              }
-                              case element_kinds::break_: {
-                                    retn += "break";
-                                    break;
-                              }
-                              case element_kinds::scope_end: {
-                                    retn += "scope_end";
-                                    break;
-                              }
-
-                              case element_kinds::call_routine_start: {
-                                    retn += "call_routine_start";
-                                    break;
-                              }
-                              case element_kinds::call_routine_end: {
-                                    retn += "call_routine_end";
-                                    break;
-                              }
-
-                              case element_kinds::concat_routine_start: {
-                                    retn += "concat_routine_start";
-                                    break;
-                              }
-                              case element_kinds::concat_routine_end: {
-                                    retn += "concat_routine_end";
-                                    break;
-                              }
-
-                              case element_kinds::conditional_expression_predicted: {
-                                    retn += "conditional_expression_predicted";
-                                    break;
-                              }
-                              case element_kinds::conditional_expression_start: {
-                                    retn += "conditional_expression_start";
-                                    break;
-                              }
-                              case element_kinds::conditional_expression_end: {
-                                    retn += "conditional_expression_end";
-                                    break;
-                              }
-                              case element_kinds::conditional_expression_end_emit: {
-                                    retn += "conditional_expression_end_emit";
-                                    break;
-                              }
-
-                              case element_kinds::conditonal_jumps_out: {
-                                    retn += "conditonal_jumps_out";
-                                    break;
-                              }
-                              case element_kinds::conditional_break: {
-                                    retn += "conditional_break";
-                                    break;
-                              }
-
-                              case element_kinds::if_: {
-                                    retn += "if";
-                                    break;
-                              }
-                              case element_kinds::elseif_: {
-                                    retn += "elseif";
-                                    break;
-                              }
-                              case element_kinds::else_: {
-                                    retn += "else";
-                                    break;
-                              }
-                              case element_kinds::condition_and: {
-                                    retn += "and";
-                                    break;
-                              }
-                              case element_kinds::condition_or: {
-                                    retn += "or";
-                                    break;
-                              }
-                              case element_kinds::condition_nonmutable: {
-                                    retn += "condition_nonmutable";
-                                    break;
-                              }
-                              case element_kinds::condition_concat_start: {
-                                    retn += "condition_concat_start";
-                                    break;
-                              }
-                              case element_kinds::condition_concat_member: {
-                                    retn += "condition_concat_member";
-                                    break;
-                              }
-                              case element_kinds::condition_concat_end: {
-                                    retn += "condition_concat_end";
-                                    break;
-                              }
-                              case element_kinds::condition_true: {
-                                    retn += "condition_true";
-                                    break;
-                              }
-                              case element_kinds::condition_routine: {
-                                    retn += "condition_routine";
-                                    break;
-                              }
-                              case element_kinds::condition_routine_start: {
-                                    retn += "condition_routine_start";
-                                    break;
-                              }
-                              case element_kinds::condition_routine_end: {
-                                    retn += "condition_routine_end";
-                                    break;
-                              }
-                              case element_kinds::condition_flag: {
-                                    retn += "condition_flag";
-                                    break;
-                              }
-                              case element_kinds::condition_break: {
-                                    retn += "condition_break";
-                                    break;
-                              }
-                              case element_kinds::condition_emit_next: {
-                                    retn += "condition_emit_next";
-                                    break;
-                              }
-                              case element_kinds::condition_logical_start: {
-                                    retn += "condition_logical_start";
-                                    break;
-                              }
-                              case element_kinds::condition_logical: {
-                                    retn += "condition_logical";
-                                    break;
-                              }
-                              case element_kinds::condition_logical_end: {
-                                    retn += "condition_logical_end";
-                                    break;
-                              }
-                              case element_kinds::condition_append_source: {
-                                    retn += "condition_append_source";
-                                    break;
-                              }
-
-                              case element_kinds::condition_end_scope: {
-                                    retn += "condition_end_scope";
-                                    break;
-                              }
-                              case element_kinds::condition_start_scope: {
-                                    retn += "condition_start_scope";
-                                    break;
-                              }
-                              case element_kinds::condition_start_scope_post: {
-                                    retn += "condition_start_scope_post";
-                                    break;
-                              }
-
-                              case element_kinds::jump_elseif: {
-                                    retn += "jump_elseif";
-                                    break;
-                              }
-                              case element_kinds::jump_else: {
-                                    retn += "jump_else";
-                                    break;
-                              }
-
-                              case element_kinds::table_start: {
-                                    retn += "table_start";
-                                    break;
-                              }
-                              case element_kinds::table_element: {
-                                    retn += "table_element";
-                                    break;
-                              }
-                              case element_kinds::table_end: {
-                                    retn += "table_end";
-                                    break;
-                              }
-                              case element_kinds::table_index: {
-                                    retn += "table_index";
-                                    break;
-                              }
-
-                              case element_kinds::closure_scoped: {
-                                    retn += "closure_scoped";
-                                    break;
-                              }
-                              case element_kinds::closure_global: {
-                                    retn += "closure_global";
-                                    break;
-                              }
-                              case element_kinds::closure_anonymous: {
-                                    retn += "closure_anonymous";
-                                    break;
-                              }
-
-                              case element_kinds::bad_instruction: {
-                                    retn += "bad_instruction";
-                                    break;
-                              }
-                              case element_kinds::dead_instruction: {
-                                    retn += "dead_instruction";
-                                    break;
-                              }
-                              case element_kinds::conditional: {
-                                    retn += "conditional";
-                                    break;
-                              }
-
-                              default: {
-                                    throw std::runtime_error("Unkown expr for expr string.");
-                              }
-                        }
-
-                        retn = '[' + retn + "]: " + std::to_string(p.second);
-
-                        return retn;
+                  std::string elem_str(const std::pair<element_kinds, std::size_t> &p) {
+                        return std::string("[") + element_kind_str(p.first) + std::string("]: ") + std::to_string(p.second);
                   }
 
 #endif
@@ -670,7 +338,7 @@ namespace luramas {
                   void debug_print_all(const char *const state = " ") {
                         std::printf("[Node-Debug(%s)] %" PRIuPTR " %s", state, this->lex->disassembly->addr, this->lex->disassembly->data->data.c_str());
                         for (const auto &i : this->expr)
-                              std::printf("%s", this->expr_str(i).c_str());
+                              std::printf("%s", this->elem_str(i).c_str());
                         std::printf("\n");
                         return;
                   }
@@ -688,7 +356,7 @@ namespace luramas {
                                     auto retn = std::to_string(this->lex->disassembly->addr) + " " + this->lex->disassembly->disassemble();
 
                                     for (const auto &i : this->expr)
-                                          retn += this->expr_str(i);
+                                          retn += this->elem_str(i);
 
                                     return retn;
                               }
@@ -702,6 +370,302 @@ namespace luramas {
                               }
                         }
                   }
+
+#pragma endregion Node Debug
+
+#pragma region node_extraction
+
+                  /* Extract all dest registers. (All registers that get overwritten, not only from "dest" operand) */
+                  std::vector<std::uint16_t> extract_dest_regs() const {
+
+                        std::vector<std::uint16_t> result;
+
+                        /* Loops */
+                        const auto for_node = this->loops.end_node;
+                        if (for_node != nullptr && this->loops.start_node == shared_from_this()) {
+
+                              for (auto i = this->loops.end_node->loops.start_reg; i <= this->loops.end_node->loops.end_reg; ++i)
+                                    result.emplace_back(i);
+                        }
+
+                        switch (this->lex->disassembly->op) {
+
+                              case luramas::il::arch::opcodes::OP_RETURN: {
+
+                                    const auto dest = this->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
+                                    auto amt = this->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+
+                                    if (amt) {
+                                          for (auto a = dest; a < (dest + amt); ++a)
+                                                result.emplace_back(a);
+                                    }
+
+                                    break;
+                              }
+
+                              case luramas::il::arch::opcodes::OP_GETVARARGS: {
+
+                                    const auto dest = this->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
+                                    auto amt = this->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+
+                                    if (amt == 0) {
+                                          amt = 1u;
+                                    }
+
+                                    for (auto a = dest; a < (dest + amt); ++a)
+                                          result.emplace_back(a);
+
+                                    break;
+                              }
+
+                              case luramas::il::arch::opcodes::OP_CCALL: {
+
+                                    auto call_retn = this->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().back()->dis.val;
+                                    const auto call = this->lex->disassembly->operands.front()->dis.reg;
+
+                                    /* Skip this */
+                                    if (std::find(this->flags.poparg_flag.call_pop.begin(), this->flags.poparg_flag.call_pop.end(), call) != this->flags.poparg_flag.call_pop.end()) {
+                                          result.emplace_back(call + 1u);
+                                    }
+
+                                    /* Append to dest. (Fill for multiple retn) */
+                                    for (auto i = 0; i < call_retn; ++i) {
+
+                                          const auto reg = call + i;
+
+                                          if (std::find(result.begin(), result.end(), reg) == result.end()) {
+                                                result.emplace_back(reg);
+                                          }
+                                    }
+
+                                    break;
+                              }
+
+                              default: {
+
+                                    /* Append dest */
+                                    if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>()) {
+                                          result.emplace_back(this->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg);
+                                    }
+
+                                    break;
+                              }
+                        }
+
+                        return result;
+                  }
+
+                  /* Extract all source registers. (All registers that get read but not overwritten, not only from "source" operand) */
+                  std::vector<std::uint16_t> extract_source_regs() const {
+
+                        bool ignore = false;
+                        std::vector<std::uint16_t> result;
+
+                        /* Skip loop */
+                        if (this->lex->kind == luramas::il::lexer::inst_kinds::for_) {
+                              return result;
+                        }
+
+                        switch (this->lex->disassembly->op) {
+
+                              case luramas::il::arch::opcodes::OP_RETURN: {
+
+                                    const auto dest = this->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
+                                    auto amt = this->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+
+                                    if (amt) {
+                                          for (auto i = dest; i < (dest + amt); ++i)
+                                                result.emplace_back(i);
+                                    }
+
+                                    ignore = true;
+                                    break;
+                              }
+
+                              case luramas::il::arch::opcodes::OP_CCALL: {
+
+                                    auto args = this->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+                                    const auto start = this->lex->disassembly->operands.front()->dis.reg;
+
+                                    for (auto i = 0; i < args; ++i) {
+
+                                          /* Skip pop */
+                                          if (std::find(this->flags.poparg_flag.call_pop.begin(), this->flags.poparg_flag.call_pop.end(), i) != this->flags.poparg_flag.call_pop.end()) {
+                                                continue;
+                                          }
+
+                                          result.emplace_back(i + start + 1u);
+                                    }
+
+                                    ignore = true;
+                                    break;
+                              }
+
+                              default: {
+                                    break;
+                              }
+                        }
+
+                        /* Done */
+                        if (ignore) {
+                              return result;
+                        }
+
+                        /* Append source */
+                        if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::source>()) {
+
+                              const auto regs = this->lex->operand_kind<luramas::il::lexer::operand_kinds::source>();
+
+                              for (const auto &operand : regs)
+                                    result.emplace_back(operand->dis.reg);
+                        }
+
+                        /* Append reg */
+                        if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::reg>()) {
+
+                              const auto regs = this->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>();
+
+                              for (const auto &operand : regs)
+                                    result.emplace_back(operand->dis.reg);
+                        }
+
+                        /* Append compare */
+                        if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::compare>()) {
+
+                              const auto regs = this->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>();
+
+                              for (const auto &operand : regs)
+                                    result.emplace_back(operand->dis.reg);
+                        }
+
+                        /* Append table reg */
+                        if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::table_reg>()) {
+
+                              const auto regs = this->lex->operand_kind<luramas::il::lexer::operand_kinds::table_reg>();
+
+                              for (const auto &operand : regs)
+                                    result.emplace_back(operand->dis.reg);
+                        }
+
+                        return result;
+                  }
+
+#pragma endregion Extract data from node
+
+#pragma region node_locator
+
+                  /* Locate all source registers. (All registers that get read but not overwritten, not only from "source" operand) */
+                  std::vector<il::lexer::operand_kinds> locate_source_regs(const std::uint16_t reg) const {
+
+                        bool ignore = false;
+                        std::vector<il::lexer::operand_kinds> result;
+
+                        /* Skip loop */
+                        if (this->lex->kind == luramas::il::lexer::inst_kinds::for_) {
+                              return result;
+                        }
+
+                        switch (this->lex->disassembly->op) {
+
+                              case luramas::il::arch::opcodes::OP_RETURN: {
+
+                                    const auto dest = this->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
+                                    auto amt = this->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+
+                                    if (amt) {
+                                          for (auto i = dest; i < (dest + amt); ++i)
+                                                if (reg == i) {
+                                                      result.emplace_back(luramas::il::lexer::operand_kinds::value);
+                                                      break;
+                                                }
+                                    }
+
+                                    ignore = true;
+                                    break;
+                              }
+
+                              case luramas::il::arch::opcodes::OP_CCALL: {
+
+                                    auto args = this->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+                                    const auto start = this->lex->disassembly->operands.front()->dis.reg;
+
+                                    for (auto i = 0; i < args; ++i) {
+
+                                          /* Skip pop */
+                                          if (std::find(this->flags.poparg_flag.call_pop.begin(), this->flags.poparg_flag.call_pop.end(), i) != this->flags.poparg_flag.call_pop.end()) {
+                                                continue;
+                                          }
+
+                                          if (reg == (i + start + 1u)) {
+                                                result.emplace_back(luramas::il::lexer::operand_kinds::value);
+                                                break;
+                                          }
+                                    }
+
+                                    ignore = true;
+                                    break;
+                              }
+
+                              default: {
+                                    break;
+                              }
+                        }
+
+                        /* Done */
+                        if (ignore) {
+                              return result;
+                        }
+
+                        /* Append source */
+                        if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::source>()) {
+
+                              const auto regs = this->lex->operand_kind<luramas::il::lexer::operand_kinds::source>();
+
+                              for (const auto &operand : regs)
+                                    if (reg == operand->dis.reg) {
+                                          result.emplace_back(il::lexer::operand_kinds::source);
+                                    }
+                        }
+
+                        /* Append reg */
+                        if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::reg>()) {
+
+                              const auto regs = this->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>();
+
+                              for (const auto &operand : regs)
+                                    if (reg == operand->dis.reg) {
+                                          result.emplace_back(il::lexer::operand_kinds::reg);
+                                    }
+                        }
+
+                        /* Append compare */
+                        if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::compare>()) {
+
+                              const auto regs = this->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>();
+
+                              for (const auto &operand : regs)
+                                    if (reg == operand->dis.reg) {
+                                          result.emplace_back(il::lexer::operand_kinds::compare);
+                                    }
+                        }
+
+                        /* Append table reg */
+                        if (this->lex->has_operand_kind<luramas::il::lexer::operand_kinds::table_reg>()) {
+
+                              const auto regs = this->lex->operand_kind<luramas::il::lexer::operand_kinds::table_reg>();
+
+                              for (const auto &operand : regs)
+                                    if (reg == operand->dis.reg) {
+                                          result.emplace_back(il::lexer::operand_kinds::table_reg);
+                                    }
+                        }
+
+                        return result;
+                  }
+
+#pragma endregion Locate data from node
+
+#pragma endregion Node functions
             };
 
             struct block {
@@ -724,7 +688,7 @@ namespace luramas {
 
                         /* Only one address check for dest. */
                         if ((start->address + start->lex->disassembly->len) == sources->address) {
-                              return sources->lex->has_operand_expr<luramas::il::lexer::operand_kinds::dest>();
+                              return sources->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>();
                         }
 
                         /* Same for source */
@@ -733,7 +697,7 @@ namespace luramas {
                         }
 
                         /* No dest */
-                        if (!start->lex->has_operand_expr<luramas::il::lexer::operand_kinds::dest>()) {
+                        if (!start->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>()) {
                               return false;
                         }
 
@@ -757,7 +721,7 @@ namespace luramas {
                                     }
 
                                     /* No dest */
-                                    if (!curr_node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::dest>()) {
+                                    if (!curr_node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>()) {
                                           return false;
                                     }
 
@@ -827,7 +791,7 @@ namespace luramas {
                         return false;
                   }
 
-                  /* See if address is inside rotuine. (Doesnt count close). */
+                  /* See if address is inside element kind routine. (Doesnt count close). */
                   template <element_kinds target, element_kinds close>
                   bool inside_routine(const std::uintptr_t addr) {
 
@@ -837,12 +801,12 @@ namespace luramas {
                         for (const auto &i : all_nodes) {
 
                               /* Inc */
-                              if (i->has_expr(target)) {
+                              if (i->has_elem(target)) {
                                     ++count;
                               }
 
                               /* Dec */
-                              if (count != 0 && i->has_expr(close)) {
+                              if (count != 0 && i->has_elem(close)) {
                                     --count;
                               }
 
@@ -855,10 +819,9 @@ namespace luramas {
                         return false;
                   }
 
-#pragma endregion
+#pragma endregion Boolean calls
 
                   /* All visits gets sorted automatically by address. */
-
 #pragma region visitors
 
                   /* Visits all blocks in ast.  */
@@ -1010,11 +973,11 @@ namespace luramas {
                               }
 
                               if (!ignore_till && i->lex->kind == luramas::il::lexer::inst_kinds::branch_condition) {
-                                    ignore_till = i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                                    ignore_till = i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
                               }
 
                               if (!ignore_till && i->lex->kind == luramas::il::lexer::inst_kinds::branch && !ignore_branch) {
-                                    ignore_till = i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                                    ignore_till = i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
                               }
                         }
 
@@ -1153,7 +1116,7 @@ namespace luramas {
                         const auto all_nodes = this->visit_all();
                         for (const auto &i : all_nodes) {
 
-                              if (i->has_expr(type)) {
+                              if (i->has_elem(type)) {
 
                                     if (all) {
                                           retn.emplace_back(i);
@@ -1176,7 +1139,7 @@ namespace luramas {
                         const auto all_nodes = this->visit_all();
                         for (const auto &i : all_nodes) {
 
-                              if (i->address > address && i->has_expr(type)) {
+                              if (i->address > address && i->has_elem(type)) {
 
                                     if (all) {
                                           retn.emplace_back(i);
@@ -1199,7 +1162,7 @@ namespace luramas {
                         const auto all_nodes = this->visit_all();
                         for (const auto &i : all_nodes) {
 
-                              if (i->address >= address && i->has_expr(type)) {
+                              if (i->address >= address && i->has_elem(type)) {
 
                                     if (all) {
                                           retn.emplace_back(i);
@@ -1222,7 +1185,7 @@ namespace luramas {
                         const auto all_nodes = this->visit_rest_scope_addr(address);
                         for (const auto &i : all_nodes) {
 
-                              if (i->has_expr(type)) {
+                              if (i->has_elem(type)) {
 
                                     if (all) {
                                           retn.emplace_back(i);
@@ -1476,13 +1439,13 @@ namespace luramas {
                         for (const auto &i : next) {
 
                               /* Scope */
-                              scope_ += (i->count_expr<luramas::ast::element_kinds::repeat_>() +
-                                         i->count_expr<luramas::ast::element_kinds::while_>() +
-                                         i->count_expr<luramas::ast::element_kinds::for_start>() +
-                                         i->count_expr<luramas::ast::element_kinds::for_iv_start>() +
-                                         i->count_expr<luramas::ast::element_kinds::for_n_start>() +
-                                         i->count_expr<luramas::ast::element_kinds::if_>());
-                              scope_ -= i->count_expr<luramas::ast::element_kinds::scope_end>();
+                              scope_ += (i->count_elem<luramas::ast::element_kinds::stat_repeat>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_while>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_for_start>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_for_iv_start>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_for_n_start>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_if>());
+                              scope_ -= i->count_elem<luramas::ast::element_kinds::stat_scope_end>();
 
                               /* Out of scope */
                               if (scope_ < 0) {
@@ -1505,13 +1468,13 @@ namespace luramas {
                         for (const auto &i : next) {
 
                               /* Scope */
-                              scope_ += (i->count_expr<luramas::ast::element_kinds::repeat_>() +
-                                         i->count_expr<luramas::ast::element_kinds::while_>() +
-                                         i->count_expr<luramas::ast::element_kinds::for_start>() +
-                                         i->count_expr<luramas::ast::element_kinds::for_iv_start>() +
-                                         i->count_expr<luramas::ast::element_kinds::for_n_start>() +
-                                         i->count_expr<luramas::ast::element_kinds::if_>());
-                              scope_ -= i->count_expr<luramas::ast::element_kinds::scope_end>();
+                              scope_ += (i->count_elem<luramas::ast::element_kinds::stat_repeat>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_while>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_for_start>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_for_iv_start>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_for_n_start>() +
+                                         i->count_elem<luramas::ast::element_kinds::stat_if>());
+                              scope_ -= i->count_elem<luramas::ast::element_kinds::stat_scope_end>();
 
                               /* Out of scope */
                               if (scope_ < 0) {
@@ -1569,14 +1532,14 @@ namespace luramas {
 
                               /* Inc for relative. */
                               for (const auto r : rel)
-                                    if (i->has_expr(r)) {
-                                          count += i->count_expr(r);
+                                    if (i->has_elem(r)) {
+                                          count += i->count_elem(r);
                                     }
 
                               /* If found op dec if count isnt 0. If it is 0 then return node. */
-                              if (i->has_expr(target)) {
+                              if (i->has_elem(target)) {
 
-                                    count -= i->count_expr<target>();
+                                    count -= i->count_elem<target>();
 
                                     if (count <= 0) {
                                           return i;
@@ -1599,14 +1562,14 @@ namespace luramas {
 
                               /* Inc for relative. */
                               for (const auto r : rel)
-                                    if (i->has_expr(r)) {
-                                          count += i->count_expr(r);
+                                    if (i->has_elem(r)) {
+                                          count += i->count_elem(r);
                                     }
 
                               /* If found op dec if count isnt 0. If it is 0 then return node. */
-                              if (i->has_expr(target)) {
+                              if (i->has_elem(target)) {
 
-                                    count -= i->count_expr<target>();
+                                    count -= i->count_elem<target>();
 
                                     if (count <= 0) {
                                           return i;
@@ -1629,13 +1592,13 @@ namespace luramas {
 
                               /* Inc for relative. */
                               for (const auto r : rel)
-                                    if (i->has_expr(r)) {
+                                    if (i->has_elem(r)) {
                                           ++count;
                                           break;
                                     }
 
                               /* If found op dec if count isnt 0. If it is 0 then return node. */
-                              if (i->has_expr(target)) {
+                              if (i->has_elem(target)) {
 
                                     if (!count) {
                                           return i;
@@ -1659,13 +1622,13 @@ namespace luramas {
                         const auto all_nodes = this->visit_all();
                         for (const auto &i : all_nodes) {
 
-                              if (i->has_expr(target)) {
+                              if (i->has_elem(target)) {
                                     inside = true;
                                     begin = i;
                               }
 
                               /* If found op dec if count isnt 0. If it is 0 then return node. */
-                              if (inside && i->has_expr(close)) {
+                              if (inside && i->has_elem(close)) {
 
                                     if (all) { /* Has all so emblace node. */
                                           retn.emplace_back(std::make_pair(begin, i));
@@ -1800,7 +1763,7 @@ namespace luramas {
                         const auto all = this->visit_rest_current(start);
                         for (const auto &i : all)
                               for (const auto expr : exprs)
-                                    if (i->has_expr(expr)) {
+                                    if (i->has_elem(expr)) {
                                           retn.emplace_back(i);
                                           break;
                                     }
@@ -1817,7 +1780,7 @@ namespace luramas {
 
                         for (const std::shared_ptr<luramas::ast::node> &i : all) {
 
-                              const auto mems = i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>();
+                              const auto mems = i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>();
                               for (const auto &m : mems)
                                     if (m->ref_addr == addr) {
                                           retn.emplace_back(i);
@@ -1836,7 +1799,7 @@ namespace luramas {
                         const auto all_nodes = this->visit_all();
                         for (const auto &i : all_nodes) {
 
-                              const auto mems = i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>();
+                              const auto mems = i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>();
                               for (const auto &m : mems)
                                     if (m->ref_addr == addr) {
                                           retn.emplace_back(i);
@@ -1855,7 +1818,7 @@ namespace luramas {
                         const auto all_nodes = this->visit_all();
                         for (const auto &i : all_nodes) {
 
-                              const auto mems = i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>();
+                              const auto mems = i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>();
                               for (const auto &m : mems) {
 
                                     const auto key = m->ref_addr;
@@ -1876,28 +1839,28 @@ namespace luramas {
                 private:
 #pragma region clean
                   /* Removes scope dupes. */
-                  void remove_dupes(std::vector<block *> &scopes) {
+                  void remove_dupes(std::vector<block *> &scopes) const {
                         std::sort(scopes.begin(), scopes.end());
                         scopes.erase(std::unique(scopes.begin(), scopes.end()), scopes.end());
                         return;
                   }
 
                   /* Removes node dupes from pair. (removes by address) */
-                  void remove_dupes(std::vector<std::pair<std::shared_ptr<node> /* Begin */, std::shared_ptr<node> /* End */>> &nodes) {
+                  void remove_dupes(std::vector<std::pair<std::shared_ptr<node> /* Begin */, std::shared_ptr<node> /* End */>> &nodes) const {
                         std::sort(nodes.begin(), nodes.end());
                         nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
                         return;
                   }
 
                   /* Removes node dupes. (removes by address) */
-                  void remove_dupes(std::vector<std::shared_ptr<node>> &nodes) {
+                  void remove_dupes(std::vector<std::shared_ptr<node>> &nodes) const {
                         std::sort(nodes.begin(), nodes.end());
                         nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
                         return;
                   }
 
                   /* Sorts nodes by addr. */
-                  void sort_addr(std::vector<std::shared_ptr<node>> &nodes) {
+                  void sort_addr(std::vector<std::shared_ptr<node>> &nodes) const {
                         if (!nodes.empty()) {
                               std::sort(nodes.begin(), nodes.end(), [](const std::shared_ptr<node> &a, const std::shared_ptr<node> &b) -> bool { return a->address < b->address; });
                         }
@@ -1905,13 +1868,12 @@ namespace luramas {
                   }
 
                   /* Sorts nodes by addr. */
-                  void sort_addr(std::vector<std::pair<std::shared_ptr<node> /* Begin */, std::shared_ptr<node> /* End */>> &nodes) {
+                  void sort_addr(std::vector<std::pair<std::shared_ptr<node> /* Begin */, std::shared_ptr<node> /* End */>> &nodes) const {
                         if (!nodes.empty()) {
                               std::sort(nodes.begin(), nodes.end(), [](const std::pair<std::shared_ptr<node>, std::shared_ptr<node>> &a, const std::pair<std::shared_ptr<node>, std::shared_ptr<node>> &b) -> bool { return a.first->address < b.first->address; });
                         }
                         return;
                   }
-
 #pragma endregion
 
                   struct cached {
@@ -1927,18 +1889,21 @@ namespace luramas {
                   /* Ast transformer callback function follows format (ast&) returns void, used for passthroughs. */
                   using transformer_callback = void (*)(std::shared_ptr<luramas::ast::ast> &ast);
 
-                  bool analyzed = false;                                                                     /* AST has been analyzed? */
-                  float total = 0.0f;                                                                        /* Used for total only avialable for main ast. */
-                  std::size_t ast_id = 0u;                                                                   /* ID */
-                                                                                                             /* Proto for ast. */
+#pragma region data
+
+                  bool analyzed = false;   /* AST has been analyzed? */
+                  float total = 0.0f;      /* Used for total only avialable for main ast. */
+                  std::size_t ast_id = 0u; /* ID */
+
                   std::unordered_map<std::uintptr_t, std::shared_ptr<luramas::il::disassembly>> disassembly; /* disassembly of closure (Useful for some stuff). { PC, disassembly } e.g. disassembly of pc=15 disassembly[15]. */
                   std::uintptr_t pc_end = 0u;                                                                /* Pc end */
 
-                  std::shared_ptr<luramas::il::ilang> il = nullptr; /* IL */
+                  std::shared_ptr<luramas::il::ilang> il = nullptr;                                                          /* IL */
+                  luramas::emitter_ir::syntax::emitter_syntax syntax = luramas::emitter_ir::syntax::emitter_syntax::nothing; /* Emission syntax linked */
 
-                  luramas::emitter_ir::syntax::emitter_syntax syntax = luramas::emitter_ir::syntax::emitter_syntax::nothing;
+                  std::shared_ptr<ir::lifter::lifter_config> lifter_config; /* Linked lifter config. */
 
-                  closure_kinds closure_kind = closure_kinds::nothing;                                                                                 /* Closure type. */
+                  closure_kinds closure_kind = closure_kinds::nothing;                                                                                 /* Closure kind. */
                   std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> closure_name = luramas::ir::ir_expr_data::make::expression_data(); /* Closure name. */
 
                   luramas::ir::lines closure_ir; /* Handled by lifter not ast used in lifter for parent closures. */
@@ -1948,9 +1913,10 @@ namespace luramas {
                   std::shared_ptr<block> body; /* Main block. */
 
                   std::unordered_map<std::uintptr_t /* Idx */, std::pair<std::string /* Value */, std::int16_t /* Reg (-1 for upv) */>> upvalues;
-                  std::vector<std::shared_ptr<ast>> closures;               /* Any children closures, relates to closure->p. */
-                  std::shared_ptr<ir::lifter::lifter_config> lifter_config; /* Linked lifter config. */
-                  std::size_t sizecode = 0u;                                /* Size of code. */
+                  std::vector<std::shared_ptr<ast>> closures; /* Any children closures, relates to closure->p. */
+                  std::size_t sizecode = 0u;                  /* Size of code. */
+
+#pragma endregion
 
                   /* Ast config */
                   struct ast_config {
@@ -1963,6 +1929,11 @@ namespace luramas {
 
                   } ast_config;
 
+                  struct ast_header {
+
+                        std::vector<std::string> imports; /* Imports */
+
+                  } ast_header;
 #pragma region block
 
                   /* Finds block by start address. */
@@ -1992,12 +1963,16 @@ namespace luramas {
                   /* Add block to cache by start address. */
                   void add(const std::shared_ptr<block> &block) {
 
-                        if (block_map.find(block->node_start) == block_map.end()) {
-                              block_map.insert(std::make_pair(block->node_start, block));
+                        if (this->block_map.find(block->node_start) == this->block_map.end()) {
+                              this->block_map.insert(std::make_pair(block->node_start, block));
                         }
 
                         return;
                   }
+
+#pragma endregion
+
+#pragma region passthroughs
 
                   /* Add passthrough transformer, gets executed in order of emblaced_back. */
                   void add(const char *const debugname, const transformer_callback &passthrough) {
@@ -2034,7 +2009,10 @@ namespace luramas {
 
                         return retn;
                   }
+
 #pragma endregion
+
+#pragma region data_string
 
                   /* Generate string representation of a control flow graph. */
                   template <bool raw = false /* Print exprs/descriptors/stats? */>
@@ -2047,14 +2025,14 @@ namespace luramas {
                         /* Append jump backs for labels. */
                         const auto branch = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(this->body->visit_next_type<luramas::il::lexer::inst_kinds::branch>(true));
                         for (const auto &node : branch) {
-                              labels.emplace_back(node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
+                              labels.emplace_back(node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
                         }
 
                         /* Add conditional jump backs for labels. */
                         const auto conditional = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(this->body->visit_next_type<luramas::il::lexer::inst_kinds::branch_condition>(true));
                         for (const auto &node : conditional) {
-                              if (node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp < 0) {
-                                    labels.emplace_back(node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
+                              if (node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp < 0) {
+                                    labels.emplace_back(node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
                               }
                         }
 
@@ -2088,19 +2066,19 @@ namespace luramas {
 
                               /* Add goto */
                               if (i->lex->kind == luramas::il::lexer::inst_kinds::branch || (i->lex->kind == luramas::il::lexer::inst_kinds::branch_condition &&
-                                                                                                (i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp < 0 || std::find(labels.begin(), labels.end(), i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr) != labels.end()))) {
-                                    dism += " goto label_" + std::to_string(i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr) + ";";
+                                                                                                (i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp < 0 || std::find(labels.begin(), labels.end(), i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr) != labels.end()))) {
+                                    dism += " goto label_" + std::to_string(i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr) + ";";
                               }
 
                               /* Add exprs if specified. */
                               if (!raw) {
                                     dism += " ( ";
                                     for (const auto &p : i->expr)
-                                          dism += i->expr_str(p) + " ";
+                                          dism += i->elem_str(p) + " ";
                                     dism += ")";
                               }
 
-                              retn += '\n' + dism;
+                              retn += dism + '\n';
 
                               /* Append branch to the stack if there is one. */
                               if (i->lex->kind == il::lexer::inst_kinds::branch_condition) {
@@ -2178,6 +2156,8 @@ namespace luramas {
 
                         return retn;
                   }
+
+#pragma endregion
 
                 private:
                   std::map<std::uintptr_t /* Start */, std::shared_ptr<block>> block_map;

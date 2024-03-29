@@ -17,11 +17,23 @@
 #include <string>
 #include <vector>
 
+using il_register = std::uint16_t;
+
 namespace luramas {
 
       namespace il {
 
             namespace arch {
+
+                  namespace data {
+
+                        enum class data_kinds : std::uint8_t {
+                              integer,
+                              string,
+                              global
+                        };
+
+                  }
 
                   namespace operand {
 
@@ -261,8 +273,8 @@ namespace luramas {
                         /* (59) | Sets upvalue for next closure instruction(Follows closure instruction) | * Type(UpvalueKind), * Source(Register)   */
                         OP_ADDUPVALUE,
 
-                        /* (5A) | Inits varargs */
-                        OP_INITVARARGS,
+                        /* (5A) | Inits */
+                        OP_RESUME,
 
                         /* (5B) |  Gets varargs | * Dest(Register), * Amount(Val) */
                         OP_GETVARARGS,
@@ -303,16 +315,15 @@ namespace luramas {
                         OP_FORLOOPN, /* (6D) | For loop numeric | * Start value register(Register), * Maximum/target value register(Register),  * Incrementation value register(Register), * Jump back(Jump) */
 
                         OP_POPTOP, /* (6E) | Pops register from top of the stack. */
-                        OP_POPARG,  /* (6F) | Adds arguement too poparg flag too get poped when next OP_CALL instruction is hit | * Ignore Register(Register) */
+                        OP_POPARG, /* (6F) | Adds arguement too poparg flag too get poped when next OP_CALL instruction is hit | * Ignore Register(Register) */
 
                         OP_STACKSTORE, /* (70) | Store value on the stack | * Offset Register(Register), * Data(Val), * Size(Size)  */
-                        OP_STACKGET, /* (71) | Get value from the stack | * Dest(Register), * Offset Register(Register), * Size(Size) */
+                        OP_STACKGET,   /* (71) | Get value from the stack | * Dest(Register), * Offset Register(Register), * Size(Size) */
 
                         OP_STACKSTOREN, /* (72) | Store value on the stack | * Offset Register(val), * Data(Val), * Size(Size)  */
                         OP_STACKGETN,   /* (73) | Get value from the stack | * Dest(Register), * Offset Register(Val), * Size(Size)  */
 
-
-
+                        OP_AMT /* Amount */
                   };
 
                   /* Virtual functions legend (Hint, Arguements, Return) */
@@ -482,7 +493,7 @@ namespace luramas {
                       {opcodes::OP_DESTROYUPVALUESA, {operand::operand_kind::reg}}, /* 58 */
 
                       {opcodes::OP_ADDUPVALUE, {operand::operand_kind::upvalue_kind, operand::operand_kind::reg}}, /* 59 */
-                      {opcodes::OP_INITVARARGS, {}},                                                               /* 5A */
+                      {opcodes::OP_RESUME, {}},                                                                    /* 5A */
 
                       {opcodes::OP_GETVARARGS, {operand::operand_kind::reg, operand::operand_kind::value}}, /* 5B */
 
@@ -632,7 +643,7 @@ namespace luramas {
                       {opcodes::OP_DESTROYUPVALUESA, {operand::operand_encoding::reg}}, /* 58 */
 
                       {opcodes::OP_ADDUPVALUE, {operand::operand_encoding::value, operand::operand_encoding::reg}}, /* 59 */
-                      {opcodes::OP_INITVARARGS, {}},                                                                /* 5A */
+                      {opcodes::OP_RESUME, {}},                                                                     /* 5A */
 
                       {opcodes::OP_GETVARARGS, {operand::operand_encoding::reg, operand::operand_encoding::value}}, /* 5B */
 
@@ -780,11 +791,6 @@ namespace luramas {
                   };
 
 #pragma endregion
-
-                  /* Cast uint8 to opcode. */
-                  __inline opcodes op(const std::uint8_t op) {
-                        return std::bit_cast<opcodes>(op);
-                  }
 
             } // namespace arch
 

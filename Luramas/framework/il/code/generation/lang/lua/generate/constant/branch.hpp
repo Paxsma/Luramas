@@ -11,7 +11,7 @@ namespace luramas {
                   namespace branch {
 
                         /* Emits if routine too refrence. */
-                        __inline void emit_if(luramas::ir::data::refrence_string &buffer, const luramas::ir::data::constant::logical_operations_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format) {
+                        __inline void emit_if(luramas::ir::data::refrence_string &buffer, const luramas::ast::bin_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format) {
 
                               buffer += format->spacing.format_compare(lua_langkeyword_scope_if);
 
@@ -35,7 +35,7 @@ namespace luramas {
                         }
 
                         /* Emits else if routine too refrence. */
-                        __inline void emit_elseif(luramas::ir::data::refrence_string &buffer, const luramas::ir::data::constant::logical_operations_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format) {
+                        __inline void emit_elseif(luramas::ir::data::refrence_string &buffer, const luramas::ast::bin_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format) {
 
                               buffer += format->spacing.format_compare(lua_langkeyword_scope_elseif);
 

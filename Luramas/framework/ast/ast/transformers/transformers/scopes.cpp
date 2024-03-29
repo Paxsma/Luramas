@@ -41,7 +41,7 @@ std::shared_ptr<luramas::ast::node> luramas::ast::transformers::scopes::end_of_s
             if (node->lex->kind == luramas::il::lexer::inst_kinds::branch_condition) {
 
                   /* Scope isnt jumpback? */
-                  const auto ref_addr = node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                  const auto ref_addr = node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
                   if (ref_addr > node->address) {
                         const auto end = luramas::ast::transformers::scopes::end_of_scope(ast, node);
                         addr_scopes.emplace_back((end != nullptr) ? end->address : ref_addr);

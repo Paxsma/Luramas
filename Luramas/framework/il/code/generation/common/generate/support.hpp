@@ -41,7 +41,7 @@ namespace luramas {
                   }
 
                   /* Ternarys are supported? */
-                  static constexpr bool supported_ternarys = false;
+                  constexpr bool supported_ternarys = false;
 
             } // namespace common
 

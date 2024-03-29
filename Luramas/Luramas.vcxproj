@@ -94,13 +94,17 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(ProjectDir)compile_me.lua  $(OutDir)</Command>
+      <Command>xcopy /y $(ProjectDir)examples\lua\compile_lua.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\luajit\compile_luajit.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\luau\compile_luau.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\python\compile_py.py $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -122,7 +126,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(ProjectDir)compile_me.lua  $(OutDir)</Command>
+      <Command>xcopy /y $(ProjectDir)examples\lua\compile_lua.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\luajit\compile_luajit.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\luau\compile_luau.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\python\compile_py.py $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -133,13 +140,17 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(ProjectDir)compile_me.lua  $(OutDir)</Command>
+      <Command>xcopy /y $(ProjectDir)examples\lua\compile_lua.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\luajit\compile_luajit.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\luau\compile_luau.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\python\compile_py.py $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -161,7 +172,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(ProjectDir)compile_me.lua  $(OutDir)</Command>
+      <Command>xcopy /y $(ProjectDir)examples\lua\compile_lua.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\luajit\compile_luajit.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\luau\compile_luau.lua  $(OutDir)
+xcopy /y $(ProjectDir)examples\python\compile_py.py $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -260,17 +274,21 @@
     <ClCompile Include="framework\ast\ast\transformers\transformers\classes.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\concats.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\flags.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\labels.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\nodes.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\locvars.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\logical_expressions.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\loops.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\proto.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\registers.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\returns.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\scopes.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\tables.cpp" />
+    <ClCompile Include="framework\ast\ast\transformers\transformers\track.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\transformers\upvalues.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\post\transformers\arith.cpp" />
     <ClCompile Include="framework\ast\ast\transformers\post\transformers\table.cpp" />
+    <ClCompile Include="framework\ast\engine\execution.cpp" />
     <ClCompile Include="framework\disassembler\luau\V3\disassembler.cpp" />
     <ClCompile Include="framework\disassembler\lua\Lua_5.3.6\disassembler.cpp" />
     <ClCompile Include="framework\il\il\il.cpp" />
@@ -289,7 +307,6 @@
     <ClCompile Include="framework\il\lifter\langs\luau\V3\Luau-V3.cpp" />
     <ClCompile Include="framework\ir\features\optimize\optimize.cpp" />
     <ClCompile Include="framework\ir\features\formatting\smart_formatting.cpp" />
-    <ClCompile Include="framework\ir\features\naming\naming.cpp" />
     <ClCompile Include="framework\ir\ir.cpp" />
     <ClCompile Include="framework\loss\loss.cpp" />
     <ClCompile Include="framework\ir\lifter\lifter\lifter.cpp" />
@@ -382,6 +399,7 @@
     <ClInclude Include="framework\ast\ast\transformers\transformers_macros.hpp" />
     <ClInclude Include="framework\ast\ast\macros.hpp" />
     <ClInclude Include="framework\ast\ast\transformers\transformers_post.hpp" />
+    <ClInclude Include="framework\ast\engine\execution.hpp" />
     <ClInclude Include="framework\disassembler\luau\V3\3rdparty\imports.hpp" />
     <ClInclude Include="framework\disassembler\luau\V3\disassembler.hpp" />
     <ClInclude Include="framework\disassembler\luau\V3\op_table.hpp" />
@@ -462,8 +480,6 @@
     <ClInclude Include="framework\ir\data\data.hpp" />
     <ClInclude Include="framework\ir\features\optimize\optimize.hpp" />
     <ClInclude Include="framework\ir\features\formatting\smart_formatting.hpp" />
-    <ClInclude Include="framework\ir\features\naming\names.hpp" />
-    <ClInclude Include="framework\ir\features\naming\naming.hpp" />
     <ClInclude Include="framework\il\code\generation\lang\luau\generate\constant\branch.hpp" />
     <ClInclude Include="framework\il\code\generation\lang\luau\generate\constant\for.hpp" />
     <ClInclude Include="framework\il\code\generation\lang\luau\generate\constant\function.hpp" />
@@ -497,14 +513,14 @@
     <ClInclude Include="framework\target_imports.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="compile_me.lua">
+    <CopyFileToFolders Include="examples\lua\compile_lua.lua">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Known Issues.text" />
+    <None Include="..\CHANGELOG.md" />
     <None Include="..\README.md" />
     <None Include="..\TODO.md" />
     <None Include=".clang-format" />
@@ -526,6 +542,9 @@
     <None Include="docs\ir\ir.md" />
     <None Include="docs\lexer\lexer.md" />
     <None Include="docs\loss\loss.md" />
+    <None Include="examples\luajit\compile_luajit.lua" />
+    <None Include="examples\luau\compile_luau.lua" />
+    <None Include="examples\python\compile_py.py" />
     <None Include="framework\ast\ast\transformers\transformers.hpp" />
     <None Include="docs\support.md" />
     <None Include="test\lua\closures.lua" />

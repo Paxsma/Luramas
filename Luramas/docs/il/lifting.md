@@ -10,7 +10,7 @@
 * [Parser Managers Usage](#Parser-Managers-Usage)
 * [Resolver Managers Description](#Resolver-Managers-Description)
 * [Resolver Managers Usage](#Resolver-Managers-Usage)
-* [Lifting Template](../template/lifter) in docs/lifting
+* [Lifting Template](../template/lifter)
 
 
 ## Description

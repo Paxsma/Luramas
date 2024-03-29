@@ -12,7 +12,7 @@
 
 namespace op_table {
 
-      static constexpr const char *const fastcall_array[] = {
+      constexpr const char *const fastcall_array[] = {
 
           "assert",
 

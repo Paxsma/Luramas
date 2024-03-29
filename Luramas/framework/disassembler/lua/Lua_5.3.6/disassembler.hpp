@@ -45,13 +45,26 @@ namespace lua_53_6_disassembler {
 
             std::vector<std::shared_ptr<operand>> operands;
             std::vector<std::uint8_t> bytes;
+
+            /* Returns disassembly string. */
+            template <bool include_hint = false>
+            std::string disassemble() {
+
+                  std::string result = std::to_string(this->addr) + " " + this->data;
+
+                  if (include_hint) {
+                        result += " " + std::string(this->hint);
+                  }
+
+                  return result;
+            }
       };
 
       /* Disassemble address */
       void disassemble(const std::uintptr_t pc, const Proto *p, std::shared_ptr<disassembly> &buffer);
 
       /* Disassemble address */
-      void disassemble(const Proto *p, std::vector<std::shared_ptr<lua_53_6_disassembler::disassembly>> &buffer);
+      void disassemble(const Proto *p, std::vector<std::shared_ptr<disassembly>> &buffer);
 
       namespace make_operand {
 

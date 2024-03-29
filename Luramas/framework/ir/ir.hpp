@@ -68,7 +68,7 @@ namespace luramas {
                                           bool open = false;          /* ( */
                                           bool close = false;         /* ) */
 
-                                          luramas::ir::data::constant::logical_operations_kinds operation = luramas::ir::data::constant::logical_operations_kinds::nothing;
+                                          luramas::ast::bin_kinds operation = luramas::ast::bin_kinds::nothing;
                                           std::shared_ptr<expression_data> rvalue = nullptr;
                                           std::shared_ptr<expression_data> lvalue = nullptr;
                                     };
@@ -96,7 +96,7 @@ namespace luramas {
 
                                                       if (c->operator_only) {
 
-                                                            if (c->operation != luramas::ir::data::constant::logical_operations_kinds::nothing) {
+                                                            if (c->operation != luramas::ast::bin_kinds::nothing) {
                                                                   luramas::emitter_ir::common::logical::emit_operator(syn, retn, c->operation, format);
                                                             }
 
@@ -169,7 +169,7 @@ namespace luramas {
 
                                                 struct compare {
 
-                                                      luramas::ir::data::constant::logical_operations_kinds operation = luramas::ir::data::constant::logical_operations_kinds::nothing;
+                                                      luramas::ast::bin_kinds operation = luramas::ast::bin_kinds::nothing;
 
                                                 } compare;
 
@@ -178,13 +178,13 @@ namespace luramas {
                                                       struct table_member {
 
                                                             bool table_start = false; /* { */
-                                                            bool table_end = false;   /*  } */
+                                                            bool table_end = false;   /* } */
 
                                                             std::shared_ptr<expression_data> index = nullptr;
                                                             std::shared_ptr<expression_data> value = nullptr;
                                                       };
 
-                                                      std::vector<std::shared_ptr<table_member>> table;
+                                                      std::vector<std::shared_ptr<table_member>> table_members;
 
                                                 } table;
 
@@ -199,7 +199,7 @@ namespace luramas {
 
                                           struct kval {
 
-                                                std::string kval = "";
+                                                std::string k = "";
 
                                           } kval;
 
@@ -212,44 +212,44 @@ namespace luramas {
 
                                           struct idx {
 
-                                                std::shared_ptr<expression_data> idx = nullptr;
+                                                std::shared_ptr<expression_data> index = nullptr;
                                                 std::shared_ptr<expression_data> table = nullptr;
 
                                           } idx;
 
                                           struct var {
 
-                                                std::string var = "";
+                                                std::string v = "";
 
                                           } var;
 
                                           struct arg {
 
-                                                std::string arg = "";
+                                                std::string a = "";
 
                                           } arg;
 
                                           struct vararg {
 
-                                                std::string vararg = "";
+                                                std::string va = "";
 
                                           } vararg;
 
                                           struct upvalue {
 
-                                                std::string upvalue = "";
+                                                std::string u = "";
 
                                           } upvalue;
 
                                           struct string {
 
-                                                std::string string = "";
+                                                std::string str = "";
 
                                           } string;
 
                                           struct global {
 
-                                                std::string global = "";
+                                                std::string g = "";
 
                                           } global;
 
@@ -262,7 +262,7 @@ namespace luramas {
 
                                           struct boolean {
 
-                                                bool boolean = false;
+                                                bool b = false;
 
                                           } boolean;
 
@@ -327,6 +327,8 @@ namespace luramas {
 
                               } exprs;
 
+#pragma region functions
+
                               std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> clone() {
                                     return std::make_shared<luramas::ir::ir_expr_data::line::expression_data>(*this);
                               }
@@ -352,29 +354,29 @@ namespace luramas {
                                     this->exprs.type_data_e = luramas::ir::data::data::type_kinds::nothing;
                                     this->exprs.concat_data_e = luramas::ir::data::data::concat_data_kinds::nothing;
                                     this->exprs.data.concat.arith.operation = ast::bin_kinds::nothing;
-                                    this->exprs.data.concat.compare.operation = luramas::ir::data::constant::logical_operations_kinds::nothing;
+                                    this->exprs.data.concat.compare.operation = luramas::ast::bin_kinds::nothing;
 
-                                    this->exprs.data.concat.table.table.clear();
+                                    this->exprs.data.concat.table.table_members.clear();
                                     this->exprs.data.concat.exprs.rvalue = nullptr;
                                     this->exprs.data.concat.exprs.lvalue = nullptr;
 
-                                    this->exprs.data.kval.kval.clear();
+                                    this->exprs.data.kval.k.clear();
 
                                     this->exprs.data.selfcall.rvalue = nullptr;
                                     this->exprs.data.selfcall.lvalue = nullptr;
 
-                                    this->exprs.data.idx.idx = nullptr;
+                                    this->exprs.data.idx.index = nullptr;
                                     this->exprs.data.idx.table = nullptr;
 
-                                    this->exprs.data.var.var.clear();
-                                    this->exprs.data.arg.arg.clear();
-                                    this->exprs.data.vararg.vararg.clear();
-                                    this->exprs.data.upvalue.upvalue.clear();
-                                    this->exprs.data.string.string.clear();
-                                    this->exprs.data.global.global.clear();
+                                    this->exprs.data.var.v.clear();
+                                    this->exprs.data.arg.a.clear();
+                                    this->exprs.data.vararg.va.clear();
+                                    this->exprs.data.upvalue.u.clear();
+                                    this->exprs.data.string.str.clear();
+                                    this->exprs.data.global.g.clear();
                                     this->exprs.data.integer.num = 0;
                                     this->exprs.data.integer.num_str.clear();
-                                    this->exprs.data.boolean.boolean = false;
+                                    this->exprs.data.boolean.b = false;
 
                                     this->exprs.data.call.function = nullptr;
                                     this->exprs.data.call.args.clear();
@@ -392,8 +394,9 @@ namespace luramas {
                                     luramas::ir::data::refrence_string retn("");
 
                                     /* Unary */
-                                    for (const auto &unary : this->unary)
+                                    for (const auto &unary : this->unary) {
                                           luramas::emitter_ir::common::unary::emit_unary(syn, retn, unary, format);
+                                    }
 
                                     if (this->constant == luramas::ir::data::constant::constant_kinds::nothing) {
 
@@ -402,27 +405,24 @@ namespace luramas {
                                                 case luramas::ir::data::data::data_kinds::idx: {
 
                                                       auto table = this->exprs.data.idx.table->build(syn, refrence, format);
-                                                      auto index = this->exprs.data.idx.idx->build(syn, refrence, format);
+                                                      auto index = this->exprs.data.idx.index->build(syn, refrence, format);
 
                                                       luramas::emitter_ir::common::table::emit_index(syn, retn, table, index, format);
-
                                                       break;
                                                 }
 
                                                 case luramas::ir::data::data::data_kinds::vararg: {
 
-                                                      luramas::emitter_ir::common::datatype::emit_vararg(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::vararg) != refrence.end(), this->exprs.data.vararg.vararg, format);
-
+                                                      luramas::emitter_ir::common::datatype::emit_vararg(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::vararg) != refrence.end(), this->exprs.data.vararg.va, format);
                                                       break;
                                                 }
 
                                                 case luramas::ir::data::data::data_kinds::idx_generic: {
 
                                                       auto table = this->exprs.data.idx.table->build(syn, refrence, format);
-                                                      auto idx = this->exprs.data.idx.idx->build(syn, refrence, format);
+                                                      auto idx = this->exprs.data.idx.index->build(syn, refrence, format);
 
                                                       luramas::emitter_ir::common::table::emit_index_generic(syn, retn, table, idx, format);
-
                                                       break;
                                                 }
 
@@ -436,7 +436,6 @@ namespace luramas {
                                                                   auto rvalue = this->exprs.data.concat.exprs.rvalue->build(syn, refrence, format);
 
                                                                   luramas::emitter_ir::common::arith_statement::emit_arith(syn, retn, this->exprs.data.concat.arith.operation, lvalue, rvalue, format);
-
                                                                   break;
                                                             }
 
@@ -446,7 +445,6 @@ namespace luramas {
                                                                   auto rvalue = (this->exprs.data.concat.exprs.rvalue != nullptr) ? this->exprs.data.concat.exprs.rvalue->build(syn, refrence, format) : std::string("");
 
                                                                   luramas::emitter_ir::common::logical::emit_logical_compare(syn, retn, this->exprs.data.concat.compare.operation, lvalue, rvalue, format);
-
                                                                   break;
                                                             }
 
@@ -454,7 +452,7 @@ namespace luramas {
 
                                                                   std::vector<std::shared_ptr<luramas::ir::data::data_refrence::table_refrence_member>> vect;
 
-                                                                  for (auto &data : this->exprs.data.concat.table.table) {
+                                                                  for (auto &data : this->exprs.data.concat.table.table_members) {
 
                                                                         auto ptr = std::make_shared<luramas::ir::data::data_refrence::table_refrence_member>();
 
@@ -473,7 +471,6 @@ namespace luramas {
                                                                   }
 
                                                                   luramas::emitter_ir::common::table::emit_table(syn, retn, vect, format);
-
                                                                   break;
                                                             }
 
@@ -487,49 +484,44 @@ namespace luramas {
 
                                                 case luramas::ir::data::data::data_kinds::arg: {
 
-                                                      luramas::emitter_ir::common::datatype::emit_arg(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::arg) != refrence.end(), this->exprs.data.arg.arg, format);
-
+                                                      luramas::emitter_ir::common::datatype::emit_arg(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::arg) != refrence.end(), this->exprs.data.arg.a, format);
                                                       break;
                                                 }
 
                                                 case luramas::ir::data::data::data_kinds::var: {
 
-                                                      luramas::emitter_ir::common::datatype::emit_var(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::var) != refrence.end(), this->exprs.data.var.var, format);
-
+                                                      luramas::emitter_ir::common::datatype::emit_var(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::var) != refrence.end(), this->exprs.data.var.v, format);
                                                       break;
                                                 }
 
                                                 case luramas::ir::data::data::data_kinds::kval: {
 
-                                                      luramas::emitter_ir::common::datatype::emit_kval(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::kval) != refrence.end(), this->exprs.data.kval.kval, format);
-
+                                                      luramas::emitter_ir::common::datatype::emit_kval(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::kval) != refrence.end(), this->exprs.data.kval.k, format);
                                                       break;
                                                 }
 
                                                 case luramas::ir::data::data::data_kinds::integer: {
 
                                                       luramas::emitter_ir::common::datatype::emit_integer(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::integer) != refrence.end(), this->exprs.data.integer.num_str, format);
-
                                                       break;
                                                 }
 
                                                 case luramas::ir::data::data::data_kinds::global: {
 
-                                                      luramas::emitter_ir::common::datatype::emit_global(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::global) != refrence.end(), this->exprs.data.global.global, format);
-
+                                                      luramas::emitter_ir::common::datatype::emit_global(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::global) != refrence.end(), this->exprs.data.global.g, format);
                                                       break;
                                                 }
 
                                                 case luramas::ir::data::data::data_kinds::upvalue: {
 
-                                                      luramas::emitter_ir::common::datatype::emit_upvalue(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::upvalue) != refrence.end(), this->exprs.data.upvalue.upvalue, format);
+                                                      luramas::emitter_ir::common::datatype::emit_upvalue(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::upvalue) != refrence.end(), this->exprs.data.upvalue.u, format);
 
                                                       break;
                                                 }
 
                                                 case luramas::ir::data::data::data_kinds::boolean: {
 
-                                                      luramas::emitter_ir::common::datatype::emit_boolean(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::boolean) != refrence.end(), this->exprs.data.boolean.boolean, format);
+                                                      luramas::emitter_ir::common::datatype::emit_boolean(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::boolean) != refrence.end(), this->exprs.data.boolean.b, format);
 
                                                       break;
                                                 }
@@ -543,7 +535,7 @@ namespace luramas {
 
                                                 case luramas::ir::data::data::data_kinds::string: {
 
-                                                      luramas::emitter_ir::common::datatype::emit_string(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::string) != refrence.end(), this->exprs.data.string.string, format);
+                                                      luramas::emitter_ir::common::datatype::emit_string(syn, retn, std::find(refrence.begin(), refrence.end(), luramas::ir::data::expr::refrence_kinds::string) != refrence.end(), this->exprs.data.string.str, format);
 
                                                       break;
                                                 }
@@ -567,7 +559,6 @@ namespace luramas {
 
                                                       const auto call = this->exprs.data.call.function->build(syn, refrence, format);
                                                       luramas::emitter_ir::common::call::emit_call(syn, retn, call, vect, format);
-
                                                       break;
                                                 }
 
@@ -579,7 +570,6 @@ namespace luramas {
                                                             vect.emplace_back(i->build(syn, refrence, format));
 
                                                       luramas::emitter_ir::common::concat::emit_concat(syn, retn, vect, format);
-
                                                       break;
                                                 }
 
@@ -594,7 +584,7 @@ namespace luramas {
                                           }
 
                                     } else {
-
+                                          std::cout << "aa " << std::to_string(int(this->constant)) << std::endl;
                                           switch (this->constant) {
 
                                                 case luramas::ir::data::constant::constant_kinds::break_: {
@@ -880,7 +870,7 @@ namespace luramas {
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::idx;
                                     this->exprs.data.idx.table = table;
-                                    this->exprs.data.idx.idx = index;
+                                    this->exprs.data.idx.index = index;
                                     return;
                               }
 
@@ -892,7 +882,7 @@ namespace luramas {
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::idx_generic;
                                     this->exprs.data.idx.table = table;
-                                    this->exprs.data.idx.idx = index;
+                                    this->exprs.data.idx.index = index;
                                     return;
                               }
 
@@ -921,7 +911,7 @@ namespace luramas {
 
                                     auto ptr = std::make_shared<luramas::ir::ir_expr_data::line::expression_data::exprs::data::concat::table::table_member>();
                                     ptr->table_start = true;
-                                    this->exprs.data.concat.table.table.emplace_back(ptr);
+                                    this->exprs.data.concat.table.table_members.emplace_back(ptr);
 
                                     return;
                               }
@@ -938,7 +928,7 @@ namespace luramas {
 
                                     auto ptr = std::make_shared<luramas::ir::ir_expr_data::line::expression_data::exprs::data::concat::table::table_member>();
                                     ptr->table_end = true;
-                                    this->exprs.data.concat.table.table.emplace_back(ptr);
+                                    this->exprs.data.concat.table.table_members.emplace_back(ptr);
 
                                     return;
                               }
@@ -975,24 +965,35 @@ namespace luramas {
                                     auto ptr = std::make_shared<luramas::ir::ir_expr_data::line::expression_data::exprs::data::concat::table::table_member>();
                                     ptr->index = index;
                                     ptr->value = value;
-                                    this->exprs.data.concat.table.table.emplace_back(ptr);
+                                    this->exprs.data.concat.table.table_members.emplace_back(ptr);
 
                                     return;
                               }
 
+                              template <bool reset = false /* Resets expression */>
+                              void emitter_logical_compare(const luramas::ast::bin_kinds operation, const std::shared_ptr<expression_data> &lvalue, const std::shared_ptr<expression_data> &rvalue) {
+
+                                    if (reset) {
+                                          this->reset();
+                                    }
+
+                                    this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::concat_exprs;
+                                    this->exprs.concat_data_e = luramas::ir::data::data::concat_data_kinds::compare;
+                                    this->exprs.data.concat.compare.operation = operation;
+                                    this->exprs.data.concat.exprs.lvalue = lvalue;
+                                    this->exprs.data.concat.exprs.rvalue = rvalue;
+                                    return;
+                              }
+
                               template <bool integer = false /* Integer(true) or Generic(false) */, bool reset = false /* Resets expression */>
-                              void emitter_datatype_for_var(const std::string &var) {
+                              void emitter_datatype_for_var(const std::shared_ptr<expression_data> &var) {
 
                                     if (reset) {
                                           this->reset();
                                     }
 
                                     this->constant = (integer) ? luramas::ir::data::constant::constant_kinds::for_numeric : luramas::ir::data::constant::constant_kinds::for_;
-
-                                    auto data = luramas::ir::ir_expr_data::make::expression_data();
-                                    data->emitter_datatype_var(var);
-                                    this->constants.for_loop.vars.emplace_back(data);
-
+                                    this->constants.for_loop.vars.emplace_back(var);
                                     return;
                               }
 
@@ -1016,7 +1017,7 @@ namespace luramas {
                                           this->reset();
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::boolean;
-                                    this->exprs.data.boolean.boolean = boolean;
+                                    this->exprs.data.boolean.b = boolean;
                                     return;
                               }
 
@@ -1039,7 +1040,7 @@ namespace luramas {
                                           this->reset();
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::arg;
-                                    this->exprs.data.arg.arg = arg;
+                                    this->exprs.data.arg.a = arg;
                                     return;
                               }
 
@@ -1049,7 +1050,7 @@ namespace luramas {
                                           this->reset();
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::upvalue;
-                                    this->exprs.data.upvalue.upvalue = upvalue;
+                                    this->exprs.data.upvalue.u = upvalue;
                                     return;
                               }
 
@@ -1059,7 +1060,7 @@ namespace luramas {
                                           this->reset();
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::vararg;
-                                    this->exprs.data.vararg.vararg = vararg;
+                                    this->exprs.data.vararg.va = vararg;
                                     return;
                               }
 
@@ -1069,7 +1070,7 @@ namespace luramas {
                                           this->reset();
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::global;
-                                    this->exprs.data.global.global = global;
+                                    this->exprs.data.global.g = global;
                                     return;
                               }
 
@@ -1079,7 +1080,7 @@ namespace luramas {
                                           this->reset();
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::var;
-                                    this->exprs.data.var.var = var;
+                                    this->exprs.data.var.v = var;
                                     return;
                               }
 
@@ -1089,7 +1090,7 @@ namespace luramas {
                                           this->reset();
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::kval;
-                                    this->exprs.data.kval.kval = kval;
+                                    this->exprs.data.kval.k = kval;
                                     return;
                               }
 
@@ -1099,7 +1100,7 @@ namespace luramas {
                                           this->reset();
                                     }
                                     this->exprs.datatype_kind = luramas::ir::data::data::data_kinds::string;
-                                    this->exprs.data.string.string = string;
+                                    this->exprs.data.string.str = string;
                                     return;
                               }
 
@@ -1163,6 +1164,7 @@ namespace luramas {
 #pragma endregion
 
 #pragma endregion
+#pragma endregion
                         };
 
                         std::int32_t scope_id = 0;
@@ -1174,14 +1176,14 @@ namespace luramas {
                   */
                         luramas::ir::data::kinds line_type = luramas::ir::data::kinds::expression;
 
-                        template <luramas::ir::data::kinds t, bool new_expression_pointer = false /* Automatically inits expression pointer. */>
-                        void set(const std::int32_t scope_id) {
+                        template <luramas::ir::data::kinds t>
+                        void set(const std::int32_t scope_id, const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &expression = nullptr) {
 
                               this->line_type = t;
                               this->scope_id = scope_id;
 
-                              if (new_expression_pointer) {
-                                    this->expression = luramas::ir::ir_expr_data::make::expression_data();
+                              if (expression != nullptr) {
+                                    this->expression = expression;
                               }
 
                               return;
@@ -1225,6 +1227,8 @@ namespace luramas {
 
                               std::vector<std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data>> lvalue; /* Lvalues */
                               std::vector<std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data>> rvalue; /* Rvalues */
+
+#pragma region set
 
                               /* Sets lvalue, rvalue */
                               template <bool newvar = false>
@@ -1279,16 +1283,20 @@ namespace luramas {
                                     return;
                               }
 
-                              /* Appends an lvalue. */
-                              void append(const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &lvalue) {
-                                    this->lvalue.emplace_back(lvalue);
-                                    return;
-                              }
-
                               /* Sets hidden lvalue. */
                               void set_hidden(const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &lvalue) {
                                     this->hidden.lvalue.clear();
                                     this->hidden.lvalue.emplace_back(lvalue);
+                                    return;
+                              }
+
+#pragma endregion
+
+#pragma region append
+
+                              /* Appends an lvalue. */
+                              void append(const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &lvalue) {
+                                    this->lvalue.emplace_back(lvalue);
                                     return;
                               }
 
@@ -1297,6 +1305,8 @@ namespace luramas {
                                     this->hidden.lvalue.emplace_back(lvalue);
                                     return;
                               }
+
+#pragma endregion
 
                         } statement;
 
@@ -1390,6 +1400,18 @@ namespace luramas {
                               return data;
                         }
 
+                        __inline std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> datatype_var(const std::string &var) {
+                              auto data = luramas::ir::ir_expr_data::make::expression_data();
+                              data->emitter_datatype_var(var);
+                              return data;
+                        }
+
+                        __inline std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> datatype_arg(const std::string &arg) {
+                              auto data = luramas::ir::ir_expr_data::make::expression_data();
+                              data->emitter_datatype_arg(arg);
+                              return data;
+                        }
+
                         __inline std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> datatype_string(const std::string &str) {
                               auto ptr = luramas::ir::ir_expr_data::make::expression_data();
                               ptr->emitter_datatype_string(str);
@@ -1403,7 +1425,6 @@ namespace luramas {
             class lines {
 
                 public:
-
                   void push_back(const std::shared_ptr<luramas::ir::ir_expr_data::line> &ptr) {
                         this->vect.push_back(ptr);
                         return;

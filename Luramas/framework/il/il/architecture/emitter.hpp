@@ -35,7 +35,7 @@ namespace luramas {
                                     /* Emit boolean */
                                     case luramas::il::arch::kval_kinds::boolean: {
                                           il->kcode = std::realloc(il->kcode, il->kcode_size + sizeof(std::uint8_t));
-                                          *std::bit_cast<std::uint8_t *>(static_cast<std::int8_t *>(il->kcode) + il->kcode_size) = kvalue.boolean.boolean;
+                                          *std::bit_cast<std::uint8_t *>(static_cast<std::int8_t *>(il->kcode) + il->kcode_size) = kvalue.boolean.b;
                                           ++il->kcode_size;
                                           break;
                                     }
@@ -43,7 +43,7 @@ namespace luramas {
                                     /* Emit closure ID */
                                     case luramas::il::arch::kval_kinds::closure: {
                                           il->kcode = std::realloc(il->kcode, il->kcode_size + sizeof(std::uint32_t));
-                                          *std::bit_cast<std::uint32_t *>(static_cast<std::int8_t *>(il->kcode) + il->kcode_size) = kvalue.closure.id;
+                                          *std::bit_cast<std::uint32_t *>(static_cast<std::int8_t *>(il->kcode) + il->kcode_size) = static_cast<std::uint32_t>(kvalue.closure.id);
                                           il->kcode_size += sizeof(std::uint32_t);
                                           break;
                                     }
@@ -52,7 +52,7 @@ namespace luramas {
 
                                           /* Emit size */
                                           il->kcode = std::realloc(il->kcode, il->kcode_size + sizeof(std::uint32_t));
-                                          *std::bit_cast<std::uint32_t *>(static_cast<std::int8_t *>(il->kcode) + il->kcode_size) = kvalue.function.str.length();
+                                          *std::bit_cast<std::uint32_t *>(static_cast<std::int8_t *>(il->kcode) + il->kcode_size) = static_cast<std::uint32_t>(kvalue.function.str.length());
                                           il->kcode_size += sizeof(std::uint32_t);
 
                                           /* Emit string */
@@ -66,7 +66,7 @@ namespace luramas {
                                     /* Emit double */
                                     case luramas::il::arch::kval_kinds::integer: {
                                           il->kcode = std::realloc(il->kcode, il->kcode_size + sizeof(double));
-                                          *std::bit_cast<double *>(static_cast<std::int8_t *>(il->kcode) + il->kcode_size) = kvalue.integer.integer;
+                                          *std::bit_cast<double *>(static_cast<std::int8_t *>(il->kcode) + il->kcode_size) = kvalue.integer.i;
                                           il->kcode_size += sizeof(double);
                                           break;
                                     }
@@ -203,7 +203,7 @@ namespace luramas {
                               }
 
                               case luramas::il::arch::operand::operand_kind::reg: {
-                                    operand->dis.reg = U;
+                                    operand->dis.reg = static_cast<std::uint16_t>(U);
                                     break;
                               }
 
@@ -256,7 +256,7 @@ namespace luramas {
 
                               case luramas::il::arch::operand::operand_kind::integer: {
 
-                                    operand->dis.integer = U;
+                                    operand->dis.integer = static_cast<double>(U);
 
                                     operand->integer_str = std::to_string(operand->dis.integer);
                                     operand->integer_str.erase(operand->integer_str.find_last_not_of('0') + 1, std::string::npos);

@@ -13,11 +13,11 @@ void luramas::ast::transformers::arguments::set(std::shared_ptr<luramas::ast::as
             luramas::ast::transformers::scopes::scope_data::scope scope(closure, true);
             scope = all;
 
-            luramas::ast::transformers::scopes::scope_data::scope_vector<std::uint32_t> dests(scope);                                                                   /* (Scoped) Registers used in dest. **getting written too** */
-            luramas::ast::transformers::scopes::scope_data::scope_vector<std::shared_ptr<luramas::ast::node>> dests_nodes(scope);                                       /* (INIT) Dest nodes relative to dests (Can't be pair as too this is used for something entirely different from arguments) */
-            luramas::ast::transformers::scopes::scope_data::scope_umap<std::uint16_t /* Reg */, std::shared_ptr<luramas::ast::node> /* Node */> dests_nodes_map(scope); /* When reg was last set. */
-            std::vector<std::uint32_t> source_no_dest;                                                                                                                  /* Registers used in source, value but not dest. **Not written too yet but been used** */
-            std::vector<std::uint32_t> dests_not_scoped;                                                                                                                /* (NOT-Scoped) Registers used in dest. */
+            luramas::ast::transformers::scopes::scope_data::scope_vector<std::uint32_t> dests(scope);                                                                           /* (Scoped) Registers used in dest. **getting written too** */
+            luramas::ast::transformers::scopes::scope_data::scope_vector<std::shared_ptr<luramas::ast::node>> dests_nodes(scope);                                               /* (INIT) Dest nodes relative to dests (Can't be pair as too this is used for something entirely different from arguments) */
+            luramas::ast::transformers::scopes::scope_data::scope_unorderedmap<std::uint16_t /* Reg */, std::shared_ptr<luramas::ast::node> /* Node */> dests_nodes_map(scope); /* When reg was last set. */
+            std::vector<std::uint32_t> source_no_dest;                                                                                                                          /* Registers used in source, value but not dest. **Not written too yet but been used** */
+            std::vector<std::uint32_t> dests_not_scoped;                                                                                                                        /* (NOT-Scoped) Registers used in dest. */
 
             for (const auto &node : all) {
 
@@ -29,17 +29,17 @@ void luramas::ast::transformers::arguments::set(std::shared_ptr<luramas::ast::as
                   /* See if theres prep for for loop then add if so. */
                   bool mutated = false;
                   auto target_node = node;
-                  if (!target_node->has_expr(luramas::ast::element_kinds::for_prep)) {
+                  if (!target_node->has_elem(luramas::ast::element_kinds::stat_for_prep)) {
 
                         const auto prev = ast->body->visit_previous_addr(target_node->address);
-                        if (prev != nullptr && prev->has_expr(luramas::ast::element_kinds::for_prep)) {
+                        if (prev != nullptr && prev->has_elem(luramas::ast::element_kinds::stat_for_prep)) {
                               target_node = prev;
                               mutated = true;
                         }
                   }
 
                   /* Append sources */
-                  for (const auto source : luramas::ast::transformers::registers::get_source_list(closure, node)) {
+                  for (const auto source : node->extract_source_regs()) {
 
                         if (dests_nodes_map.find(source)) {
 
@@ -58,7 +58,7 @@ void luramas::ast::transformers::arguments::set(std::shared_ptr<luramas::ast::as
                   }
 
                   /* Append dests */
-                  for (const auto dest : luramas::ast::transformers::registers::get_dest_list(closure, node)) {
+                  for (const auto dest : node->extract_dest_regs()) {
 
                         /* Add node too dest_nodes_map. */
                         if (dests_nodes_map.find(dest)) {
@@ -96,9 +96,8 @@ void luramas::ast::transformers::arguments::set(std::shared_ptr<luramas::ast::as
                   /* Add for move */
                   if (node->lex->disassembly->op == luramas::il::arch::opcodes::OP_MOVE) {
 
-                        const auto reg = node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
+                        const auto reg = node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
                         if (dests.find(reg)) {
-
                               node->sub_node = dests_nodes.idx_get(dests.index(reg));
                         }
                   }
@@ -148,7 +147,7 @@ void luramas::ast::transformers::arguments::set(std::shared_ptr<luramas::ast::as
                   }
 
                   /* Check front for hole. */
-                  if (!std::binary_search(source_no_dest.begin(), source_no_dest.end(), hole_target)) {
+                  if (!std::binary_search(source_no_dest.begin(), source_no_dest.end(), static_cast<std::uint32_t>(hole_target))) {
                         max = hole_target;
                   }
 
@@ -164,7 +163,7 @@ void luramas::ast::transformers::arguments::set(std::shared_ptr<luramas::ast::as
                   if (hole_target != -1) {
 
                         /* Check front for hole. */
-                        if (!std::binary_search(source_no_dest.begin(), source_no_dest.end(), hole_target)) {
+                        if (!std::binary_search(source_no_dest.begin(), source_no_dest.end(), static_cast<std::uint32_t>(hole_target))) {
                               max = hole_target;
                         }
                   }
@@ -174,6 +173,7 @@ void luramas::ast::transformers::arguments::set(std::shared_ptr<luramas::ast::as
             for (auto reg = min; reg <= max; reg++)
                   closure->arg_regs.emplace_back(std::make_pair(reg, luramas::emitter_ir::common::locvar::make_locvar_alphabetical_name(ast->lifter_config->arg_prefix, reg, ast->lifter_config->arg_suffix_char)));
 
+            /* Varargs ("...") */
             if (ast->body->has_inst<luramas::il::arch::opcodes::OP_GETVARARGS>()) {
                   closure->arg_regs.emplace_back(std::make_pair(-1, "{VARARG_PLACEHOLDER}"));
             }

@@ -28,15 +28,14 @@ std::string decompile(const std::string &code) {
       auto format = std::make_shared<luramas::ir::data::format::format>();                 /* Format */
       auto optimizations = std::make_shared<luramas::ir::data::optimizations::optimize>(); /* Optimizations */
 
-
       return luramas::decompile(code, config, format, optimizations); /* Return decompilation. */
 }
 
 std::int32_t main() {
 
-      /* Read from compile_me.lua */
+      /* Read from compile_luau.lua */
       std::stringstream code;
-      std::ifstream file("compile_me.lua");
+      std::ifstream file("C:\\Users\\Mellon\\Documents\\Projects\\Luramas\\Luramas\\examples\\luau\\compile_luau.lua");
 
       if (file.is_open()) {
             std::string line = "";

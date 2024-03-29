@@ -54,13 +54,26 @@ namespace luau_v3_disassembler {
 
             std::vector<std::shared_ptr<operand>> operands;
             std::vector<std::uint8_t> bytes;
+
+            /* Returns disassembly string. */
+            template <bool include_hint = false>
+            std::string disassemble() {
+
+                  std::string result = std::to_string(this->addr) + " " + this->data;
+
+                  if (include_hint) {
+                        result += " " + std::string(this->hint);
+                  }
+
+                  return result;
+            }
       };
 
       /* Disassemble address */
       void disassemble(const std::uintptr_t addr, const Proto *p, std::shared_ptr<disassembly> &buffer);
 
       /* Disassemble everything */
-      void disassemble(const Proto *p, std::vector<std::shared_ptr<luau_v3_disassembler::disassembly>> &buffer);
+      void disassemble(const Proto *p, std::vector<std::shared_ptr<disassembly>> &buffer);
 
       namespace make_operand {
 
@@ -74,7 +87,7 @@ namespace luau_v3_disassembler {
             __inline std::shared_ptr<luau_v3_disassembler::operand> make_operand_val(const std::intptr_t v) {
                   auto operand = std::make_shared<luau_v3_disassembler::operand>();
                   operand->type = op_table::type::val;
-                  operand->integer = v;
+                  operand->integer = static_cast<double>(v);
                   return operand;
             }
 

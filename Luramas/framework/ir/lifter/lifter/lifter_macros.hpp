@@ -23,13 +23,13 @@
       {                                                                                    \
                                                                                            \
             /* Append source too compare flag. */                                          \
-            if (node->has_expr(luramas::ast::element_kinds::condition_append_source)) {    \
+            if (node->has_elem(luramas::ast::element_kinds::condition_append_source)) {    \
                                                                                            \
                   regs.back()[flag_compare]->set_rvalue(data);                             \
             }                                                                              \
                                                                                            \
             /* Source = compare flag */                                                    \
-            if (node->has_expr(luramas::ast::element_kinds::conditional_expression_end)) { \
+            if (node->has_elem(luramas::ast::element_kinds::conditional_expression_end)) { \
                                                                                            \
                   data = regs.back()[flag_compare]->data;                                  \
                   regs.back()[flag_compare]->clear(true);                                  \

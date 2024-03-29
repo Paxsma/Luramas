@@ -29,7 +29,7 @@ namespace luramas {
 
                               struct comment {
 
-                                    bool comment = true; /* Uses non expandable comment when not nessary. this->indent.collapse.comment.disabled must be false */
+                                    bool comments = true; /* Uses non expandable comment when not nessary. this->indent.collapse.comment.disabled must be false */
 
                               } comment;
 

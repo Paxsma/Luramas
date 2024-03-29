@@ -56,23 +56,23 @@ namespace blocks {
                   const auto temp_lex = luramas::il::lexer::lexer(dism.second);
 
                   /* Don't log if jumpback. */
-                  if (temp_lex->has_operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>() && temp_lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp <= 0) {
+                  if (temp_lex->has_operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>() && temp_lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp <= 0) {
                         continue;
                   }
 
                   if (temp_lex->kind == luramas::il::lexer::inst_kinds::branch || temp_lex->kind == luramas::il::lexer::inst_kinds::branch_condition) {
 
                         /* Jump with no memaddr operand idk how this has happened. */
-                        if (!temp_lex->has_operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>()) {
+                        if (!temp_lex->has_operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>()) {
                               throw std::runtime_error("Jump with no memaddr operand in lexer at set_blocks.");
                         }
 
                         /* Jump is negative don't take. */
-                        if (temp_lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp < 0) {
+                        if (temp_lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp < 0) {
                               continue;
                         }
 
-                        branch_ends.emplace_back(temp_lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
+                        branch_ends.emplace_back(temp_lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
                   }
             }
 
@@ -131,7 +131,7 @@ namespace blocks {
                   const auto jump_node = nodes.back();
                   if (jump_node->lex->kind == luramas::il::lexer::inst_kinds::branch || jump_node->lex->kind == luramas::il::lexer::inst_kinds::branch_condition) {
 
-                        const auto jmp = jump_node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                        const auto jmp = jump_node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
                         const auto next_node_block = linear_blocks[jmp];
 
                         auto current = ast->find_block(pc);                                                         /* Block too place all info in. */
@@ -167,7 +167,7 @@ namespace blocks {
 
                               /* Propegate with bad instruction expr. */
                               for (const auto &node : current->nodes) {
-                                    node->add_expr<luramas::ast::element_kinds::bad_instruction>();
+                                    node->add_elem<luramas::ast::element_kinds::desc_bad_instruction>();
                               }
                         }
 
@@ -184,7 +184,7 @@ namespace blocks {
                                     }
 
                                     /* Add jump taken. */
-                                    if (jump_node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp > 0 || std::find(analyzed_scopes.begin(), analyzed_scopes.end(), jmp) == analyzed_scopes.end()) {
+                                    if (jump_node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp > 0 || std::find(analyzed_scopes.begin(), analyzed_scopes.end(), jmp) == analyzed_scopes.end()) {
                                           current->branches.emplace_back(jump_block);
                                           ast->add(jump_block);
                                     }
@@ -211,7 +211,7 @@ namespace blocks {
                                     }
 
                                     /* Add jump taken. */
-                                    if (jump_node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp > 0 || std::find(analyzed_scopes.begin(), analyzed_scopes.end(), jmp) == analyzed_scopes.end()) {
+                                    if (jump_node->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp > 0 || std::find(analyzed_scopes.begin(), analyzed_scopes.end(), jmp) == analyzed_scopes.end()) {
                                           current->branches.emplace_back(jump_block);
                                           ast->add(jump_block);
                                     }
@@ -290,8 +290,8 @@ std::shared_ptr<luramas::ast::ast> luramas::ast::gen_ast(const luramas::emitter_
                   child_ast->lifter_config = config;                                                      /* Set config. */
                   child_ast->sizecode = child_ast->il->dis.back()->addr + child_ast->il->dis.back()->len; /* Last addr + len is size code. */
 
-                  current_closure->closures.emplace_back(child_ast);                         /* Append uninited child AST too targets closure. */
-                  luramas::ast::transformers::closure::set_closure_info(current_closure, i); /* Set closure information for the closure. */
+                  current_closure->closures.emplace_back(child_ast);                             /* Append uninited child AST too targets closure. */
+                  luramas::ast::transformers::closure::process_closure_info(current_closure, i); /* Set closure information for the closure. */
 
                   /* Add child to get analyzed. */
                   closures_ast.emplace_back(child_ast); /* Append child AST too get analyzed later. */

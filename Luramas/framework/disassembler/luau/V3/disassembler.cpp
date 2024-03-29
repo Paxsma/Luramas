@@ -689,8 +689,8 @@ void set_data(std::shared_ptr<luau_v3_disassembler::disassembly> &buffer, const 
                               }
 
                               case op_table::type::integer: {
-                                    current_operand->integer = operand_value;
-                                    buffer->total += current_operand->integer;
+                                    current_operand->integer = static_cast<double>(operand_value);
+                                    buffer->total += static_cast<float>(current_operand->integer);
                               }
 
                               case op_table::type::k_idx_aux: {
@@ -791,7 +791,7 @@ void set_data(std::shared_ptr<luau_v3_disassembler::disassembly> &buffer, const 
 
                                                 if (type == op_table::type::k_idx_pp) {
 
-                                                      for (auto i = 0u; i < p->sizep; i++)
+                                                      for (auto i = 0; i < p->sizep; i++)
                                                             if (p->p[i] == gco2cl(kv.value.gc)->l.p) {
                                                                   operand_value = i;
                                                                   break;

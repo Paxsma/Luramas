@@ -360,7 +360,7 @@ std::shared_ptr<luramas::il::lexer::lexeme> luramas::il::lexer::lexer(std::share
                   retn->operands = {luramas::il::lexer::operand_kinds::dest, luramas::il::lexer::operand_kinds::kvalue};
                   break;
             }
-            case luramas::il::arch::opcodes::OP_INITVARARGS: {
+            case luramas::il::arch::opcodes::OP_RESUME: {
                   retn->kind = luramas::il::lexer::inst_kinds::expression;
                   break;
             }

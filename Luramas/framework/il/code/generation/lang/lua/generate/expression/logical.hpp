@@ -9,46 +9,46 @@ namespace luramas {
 
                   namespace logical {
 
-                        __inline void emit_operator(luramas::ir::data::refrence_string &buffer, const luramas::ir::data::constant::logical_operations_kinds op, const std::shared_ptr<luramas::ir::data::format::format> &format) {
+                        __inline void emit_operator(luramas::ir::data::refrence_string &buffer, const luramas::ast::bin_kinds op, const std::shared_ptr<luramas::ir::data::format::format> &format) {
 
                               switch (op) {
 
-                                    case luramas::ir::data::constant::logical_operations_kinds::and_: {
+                                    case luramas::ast::bin_kinds::and_: {
                                           buffer += format->spacing.format_logical_operation(lua_langkeyword_compare_and);
                                           break;
                                     }
 
-                                    case luramas::ir::data::constant::logical_operations_kinds::or_: {
+                                    case luramas::ast::bin_kinds::or_: {
                                           buffer += format->spacing.format_logical_operation(lua_langkeyword_compare_or);
                                           break;
                                     }
 
-                                    case luramas::ir::data::constant::logical_operations_kinds::lt: {
+                                    case luramas::ast::bin_kinds::lt_: {
                                           buffer += format->spacing.format_logical_operation(lua_langkeyword_compare_lessthan);
                                           break;
                                     }
 
-                                    case luramas::ir::data::constant::logical_operations_kinds::lte: {
+                                    case luramas::ast::bin_kinds::lte_: {
                                           buffer += format->spacing.format_logical_operation(lua_langkeyword_compare_lessthanequal);
                                           break;
                                     }
 
-                                    case luramas::ir::data::constant::logical_operations_kinds::eq: {
+                                    case luramas::ast::bin_kinds::eq_: {
                                           buffer += format->spacing.format_logical_operation(lua_langkeyword_compare_equal);
                                           break;
                                     }
 
-                                    case luramas::ir::data::constant::logical_operations_kinds::ne: {
+                                    case luramas::ast::bin_kinds::ne_: {
                                           buffer += format->spacing.format_logical_operation(lua_langkeyword_compare_notequal);
                                           break;
                                     }
 
-                                    case luramas::ir::data::constant::logical_operations_kinds::gt: {
+                                    case luramas::ast::bin_kinds::gt_: {
                                           buffer += format->spacing.format_logical_operation(lua_langkeyword_compare_greaterthan);
                                           break;
                                     }
 
-                                    case luramas::ir::data::constant::logical_operations_kinds::gte: {
+                                    case luramas::ast::bin_kinds::gte_: {
                                           buffer += format->spacing.format_logical_operation(lua_langkeyword_compare_greaterthanequal);
                                           break;
                                     }
@@ -62,7 +62,7 @@ namespace luramas {
                         }
 
                         /* Emits logical operation too refrence. */
-                        __inline void emit_logical_operation(luramas::ir::data::refrence_string &buffer, const luramas::ir::data::constant::logical_operations_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format) {
+                        __inline void emit_logical_operation(luramas::ir::data::refrence_string &buffer, const luramas::ast::bin_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format) {
 
                               buffer += lvalue;
                               luramas::emitter_ir::lua::logical::emit_operator(buffer, op, format);
@@ -88,7 +88,7 @@ namespace luramas {
                         }
 
                         /* Emits logical compare too refrence. e.g. (?? ?? ??) */
-                        __inline void emit_logical_compare(luramas::ir::data::refrence_string &buffer, const luramas::ir::data::constant::logical_operations_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format, const bool open, const bool close) {
+                        __inline void emit_logical_compare(luramas::ir::data::refrence_string &buffer, const luramas::ast::bin_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format, const bool open, const bool close) {
 
                               if (open) {
                                     buffer += format->spacing.format_parenthesis_open(lua_langkeyword_parenthesis_open);

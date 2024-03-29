@@ -496,7 +496,7 @@ init:                       /* using goto's to optimize tail recursion */
                         break;
                   }
                   default:
-                  dflt : {                                /* pattern class plus optional suffix */
+                  dflt: {                                 /* pattern class plus optional suffix */
                         const char *ep = classend(ms, p); /* points to optional suffix */
                         /* does not match at least once? */
                         if (!singlematch(ms, s, p, ep)) {

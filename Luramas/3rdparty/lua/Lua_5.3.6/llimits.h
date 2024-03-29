@@ -49,7 +49,7 @@ typedef unsigned char lu_byte;
 ** this is for hashing only; there is no problem if the integer
 ** cannot hold the whole pointer value
 */
-#define point2uint(p) ((unsigned int)((size_t)(p)&UINT_MAX))
+#define point2uint(p) ((unsigned int)((size_t)(p) & UINT_MAX))
 
 /* type to ensure maximum alignment */
 #if defined(LUAI_USER_ALIGNMENT_T)

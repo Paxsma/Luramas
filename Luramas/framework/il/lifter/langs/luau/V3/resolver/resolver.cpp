@@ -18,12 +18,13 @@ void luau_v3_resolvers::resolve_instruction_operands(luramas::il::lifter::resolv
 
                         /* Fix args for multret. */
                         if (i->operands[1]->multret) {
-                              i->operands[1]->dis.reg = i->operands[1]->dis.reg - call->dis.reg;
+                              i->operands[1]->dis.reg -= call->dis.reg;
                         }
 
                         /* Fix args for multret. */
                         if (i->operands.back()->multret) {
-                              i->operands.back()->dis.reg = i->operands.back()->dis.reg - call->dis.reg;
+                              const auto adjusted = i->operands.back()->dis.reg - call->dis.reg;
+                              i->operands.back()->dis.reg = (adjusted) ? adjusted : i->operands.back()->dis.reg;
                         }
 
                         break;
@@ -38,7 +39,6 @@ void luau_v3_resolvers::resolve_instruction_operands(luramas::il::lifter::resolv
       return;
 }
 
-/* Resolves jump locations operands. */
 void luau_v3_resolvers::resolve_jump_operands(luramas::il::lifter::resolver::resolver_manager<Proto> &rm) {
 
       for (const auto &i : rm.il->mutate_dis()) {
@@ -56,7 +56,6 @@ void luau_v3_resolvers::resolve_jump_operands(luramas::il::lifter::resolver::res
       return;
 }
 
-/* Resolves instructions. */
 void luau_v3_resolvers::resolve_instructions(luramas::il::lifter::resolver::resolver_manager<Proto> &rm) {
 
       /* Emit instruction. */

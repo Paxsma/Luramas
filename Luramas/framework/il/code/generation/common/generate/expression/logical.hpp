@@ -10,7 +10,7 @@ namespace luramas {
 
                   namespace logical {
 
-                        __inline void emit_operator(const luramas::emitter_ir::syntax::emitter_syntax syn, luramas::ir::data::refrence_string &buffer, const luramas::ir::data::constant::logical_operations_kinds op, const std::shared_ptr<luramas::ir::data::format::format> &format) {
+                        __inline void emit_operator(const luramas::emitter_ir::syntax::emitter_syntax syn, luramas::ir::data::refrence_string &buffer, const luramas::ast::bin_kinds op, const std::shared_ptr<luramas::ir::data::format::format> &format) {
 
                               switch (syn) {
 
@@ -33,7 +33,7 @@ namespace luramas {
                         }
 
                         /* Emits logical operation too refrence. */
-                        __inline void emit_logical_operation(const luramas::emitter_ir::syntax::emitter_syntax syn, luramas::ir::data::refrence_string &buffer, const luramas::ir::data::constant::logical_operations_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format) {
+                        __inline void emit_logical_operation(const luramas::emitter_ir::syntax::emitter_syntax syn, luramas::ir::data::refrence_string &buffer, const luramas::ast::bin_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format) {
 
                               switch (syn) {
 
@@ -79,7 +79,7 @@ namespace luramas {
                         }
 
                         /* Emits logical compare too refrence. e.g. (?? ?? ??) */
-                        __inline void emit_logical_compare(const luramas::emitter_ir::syntax::emitter_syntax syn, luramas::ir::data::refrence_string &buffer, const luramas::ir::data::constant::logical_operations_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format, const bool open = true, const bool close = true) {
+                        __inline void emit_logical_compare(const luramas::emitter_ir::syntax::emitter_syntax syn, luramas::ir::data::refrence_string &buffer, const luramas::ast::bin_kinds op, luramas::ir::data::refrence_string &lvalue, luramas::ir::data::refrence_string &rvalue, const std::shared_ptr<luramas::ir::data::format::format> &format, const bool open = true, const bool close = true) {
 
                               switch (syn) {
 

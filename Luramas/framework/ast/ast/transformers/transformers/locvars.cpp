@@ -11,19 +11,19 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
             auto node_var = [&](const std::shared_ptr<luramas::il::arch::operand::operand> &operand) -> void {
                   /* Not set yet. */
 
-                  node->add_existance<luramas::ast::element_kinds::locvar>();
+                  node->add_safe<luramas::ast::element_kinds::stat_locvar>();
 
                   /* Inc for call if. */
                   if (node->lex->kind == luramas::il::lexer::inst_kinds::ccall) {
 
-                        auto retn = node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().back()->dis.val;
+                        auto retn = node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().back()->dis.val;
 
                         if (retn > 1) {
-                              node->variables.multret_amount = retn;
-                              node->add_existance<luramas::ast::element_kinds::locvar_multret>();
+                              node->variables.multret_amount = static_cast<std::size_t>(retn);
+                              node->add_safe<luramas::ast::element_kinds::stat_locvar_multret>();
                         }
 
-                        registers.back() += retn;
+                        registers.back() += static_cast<std::uint16_t>(retn);
 
                   } else {
                         ++registers.back();
@@ -46,20 +46,20 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
             };
 
             /* End of scope. */
-            for (auto i = 0u; i < node->count_expr<luramas::ast::element_kinds::scope_end>(); ++i) {
+            for (auto i = 0u; i < node->count_elem<luramas::ast::element_kinds::stat_scope_end>(); ++i) {
                   registers.pop_back();
             }
 
             /* Log reg scope start. */
-            if (node->has_expr(luramas::ast::element_kinds::for_start) || node->has_expr(luramas::ast::element_kinds::for_n_start) || node->has_expr(luramas::ast::element_kinds::for_iv_start)) {
+            if (node->has_elem(luramas::ast::element_kinds::stat_for_start) || node->has_elem(luramas::ast::element_kinds::stat_for_n_start) || node->has_elem(luramas::ast::element_kinds::stat_for_iv_start)) {
 
                   registers.emplace_back(node->loops.end_node->loops.end_reg + 1u);
 
-            } else if (node->has_expr(luramas::ast::element_kinds::if_) || node->has_expr(luramas::ast::element_kinds::repeat_) || node->has_expr(luramas::ast::element_kinds::while_)) {
+            } else if (node->has_elem(luramas::ast::element_kinds::stat_if) || node->has_elem(luramas::ast::element_kinds::stat_repeat) || node->has_elem(luramas::ast::element_kinds::stat_while)) {
 
                   registers.emplace_back(registers.back());
 
-            } else if (node->has_expr(luramas::ast::element_kinds::elseif_) || node->has_expr(luramas::ast::element_kinds::else_)) {
+            } else if (node->has_elem(luramas::ast::element_kinds::stat_elseif) || node->has_elem(luramas::ast::element_kinds::stat_else)) {
 
                   registers.back() = (*(registers.end() - 1));
             }
@@ -69,21 +69,21 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
             routine_dec(node, routine);
 
             /* scoped closure is apart of a routine mutate it to an anonymous closure. */
-            if (node->has_expr(luramas::ast::element_kinds::closure_scoped) && routine) {
-                  node->replace_next<luramas::ast::element_kinds::closure_scoped, luramas::ast::element_kinds::closure_anonymous>();
+            if (node->has_elem(luramas::ast::element_kinds::stat_closure_scoped) && routine) {
+                  node->replace_next<luramas::ast::element_kinds::stat_closure_scoped, luramas::ast::element_kinds::stat_closure_anonymous>();
                   ast->closures[node->closures.closure_idx]->closure_kind = luramas::ast::closure_kinds::anonymous;
             }
 
             /* Not inside routine and node does not have a dest operand. */
-            if (!routine && node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::dest>()) {
+            if (!routine && node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>()) {
 
                   debug_line("Node with dest and no routine on %s", node->str().c_str());
 
                   auto bad = false; /* Failed any checks (can also be used if node is already set). */
-                  const auto dest = node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front();
+                  const auto dest = node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front();
 
                   /* Node has a scoped closure so emit a pre-set name too it. */
-                  if (node->has_expr(luramas::ast::element_kinds::closure_scoped)) {
+                  if (node->has_elem(luramas::ast::element_kinds::stat_closure_scoped)) {
 
                         /* Create closure name. */
                         std::string buffer = "";
@@ -96,7 +96,7 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
                   /* Capture with source garunteeds locvar so check there. */
                   const auto captures = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(ast->body->visit_inst_scope<luramas::il::arch::opcodes::OP_SETLIST>(node->address, true));
                   for (const auto &capture : captures)
-                        if (capture->lex->has_operand_expr<luramas::il::lexer::operand_kinds::source>() && capture->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.upvalue_reg == dest->dis.reg && luramas::ast::transformers::registers::logical_dest_register(ast, node, dest->dis.reg)) {
+                        if (capture->lex->has_operand_kind<luramas::il::lexer::operand_kinds::source>() && capture->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.upvalue_reg == dest->dis.reg && luramas::ast::transformers::registers::logical_dest_register(ast, node, dest->dis.reg)) {
 #if DEBUG_AST_LOCVAR_REGISTERS
                               if (dest->reg == registers.back()) {
 #endif
@@ -114,14 +114,14 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
                   }
 
                   /* Check concat and call routines if the dest is used as a dest in them no locvar. */
-                  const auto calls = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(ast->body->visit_next_expr_scope<luramas::ast::element_kinds::call_routine_start>(node->address, true));
+                  const auto calls = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(ast->body->visit_next_expr_scope<luramas::ast::element_kinds::desc_call_routine_start>(node->address, true));
                   for (const auto &call : calls) {
 
-                        const auto node_end = ast->body->visit_relative_next_expr_scope_current<luramas::ast::element_kinds::call_routine_end>(call->address, {luramas::ast::element_kinds::call_routine_start});
+                        const auto node_end = ast->body->visit_relative_next_expr_scope_current<luramas::ast::element_kinds::desc_call_routine_end>(call->address, {luramas::ast::element_kinds::desc_call_routine_start});
 
                         /* Target dest reg used in call routine dest. */
                         for (const auto &call_node : ast->body->visit_range(call->address, node_end->address))
-                              if (call_node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::dest>() && call_node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg == registers.back()) {
+                              if (call_node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>() && call_node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg == registers.back()) {
                                     bad = true;
                               }
                   }
@@ -130,14 +130,14 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
                   }
 
                   /* Concat */
-                  const auto concats = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(ast->body->visit_next_expr_scope<luramas::ast::element_kinds::concat_routine_start>(node->address, true));
+                  const auto concats = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(ast->body->visit_next_expr_scope<luramas::ast::element_kinds::desc_concat_routine_start>(node->address, true));
                   for (const auto &concat : concats) {
 
-                        const auto node_end = ast->body->visit_relative_next_expr_scope_current<luramas::ast::element_kinds::concat_routine_end>(concat->address, {luramas::ast::element_kinds::concat_routine_start});
+                        const auto node_end = ast->body->visit_relative_next_expr_scope_current<luramas::ast::element_kinds::desc_concat_routine_end>(concat->address, {luramas::ast::element_kinds::desc_concat_routine_start});
 
                         /* Target dest reg used in call routine dest. */
                         for (const auto &concat_node : ast->body->visit_range(concat->address, node_end->address))
-                              if (concat_node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::dest>() && concat_node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg == registers.back()) {
+                              if (concat_node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>() && concat_node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg == registers.back()) {
                                     bad = true;
                               }
                   }
@@ -153,10 +153,10 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
 				*/
 
                   /* Mutate scoped closure to anonymous. */
-                  if (node->has_expr(luramas::ast::element_kinds::closure_scoped)) {
+                  if (node->has_elem(luramas::ast::element_kinds::stat_closure_scoped)) {
 
                         if (dest->dis.reg != registers.back()) {
-                              node->replace_next<luramas::ast::element_kinds::closure_scoped, luramas::ast::element_kinds::closure_anonymous>();
+                              node->replace_next<luramas::ast::element_kinds::stat_closure_scoped, luramas::ast::element_kinds::stat_closure_anonymous>();
                               ast->closures[node->closures.closure_idx]->closure_kind = luramas::ast::closure_kinds::anonymous;
                         } else {
 
@@ -177,12 +177,12 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
                               bool logical_mult = false;
                               if (node->lex->kind == luramas::il::lexer::inst_kinds::ccall) {
 
-                                    auto retn = node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().back()->dis.val;
+                                    auto retn = node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().back()->dis.val;
 
                                     if (retn > 1) {
 
                                           /* Check all multrets */
-                                          for (auto i = dest->dis.reg; i < (dest->dis.reg + retn); i++)
+                                          for (auto i = dest->dis.reg; i < (dest->dis.reg + retn); ++i)
                                                 if (luramas::ast::transformers::registers::logical_dest_register(ast, node, i)) {
                                                       logical_mult = true;
                                                 }
@@ -193,15 +193,15 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
                               if (logical_mult || luramas::ast::transformers::registers::logical_dest_register(ast, node, dest->dis.reg)) {
 
                                     /* Mutate global */
-                                    if (node->has_expr(luramas::ast::element_kinds::closure_global)) {
+                                    if (node->has_elem(luramas::ast::element_kinds::stat_closure_global)) {
 
-                                          node->replace_next<luramas::ast::element_kinds::closure_global, luramas::ast::element_kinds::closure_scoped>();
-                                          node->remove_all_expr<luramas::ast::element_kinds::closure_global>();
+                                          node->replace_next<luramas::ast::element_kinds::stat_closure_global, luramas::ast::element_kinds::stat_closure_scoped>();
+                                          node->remove_all_elem<luramas::ast::element_kinds::stat_closure_global>();
 
                                           ast->closures[node->closures.closure_idx]->closure_kind = luramas::ast::closure_kinds::scoped;
 
                                           if (node->closures.setglobal_node != nullptr) {
-                                                node->closures.setglobal_node->remove_all_expr<luramas::ast::element_kinds::dead_instruction>();
+                                                node->closures.setglobal_node->remove_all_elem<luramas::ast::element_kinds::desc_dead_instruction>();
                                           }
 
                                           std::string buffer = "";
@@ -220,7 +220,7 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
 
                                           const auto range = ast->body->visit_range_current(node->closures.idx_nodes.first->address, node->closures.idx_nodes.second->address);
                                           for (const auto &i : range) {
-                                                i->remove_all_expr<luramas::ast::element_kinds::dead_instruction>();
+                                                i->remove_all_elem<luramas::ast::element_kinds::desc_dead_instruction>();
                                           }
                                     }
                               }
@@ -232,7 +232,7 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
 #endif
                   }
 
-            } else if (!routine && node->has_expr(luramas::ast::element_kinds::table_end)) { /* No routine and end of table garunteed locvar. */
+            } else if (!routine && node->has_elem(luramas::ast::element_kinds::table_end)) { /* No routine and end of table garunteed locvar. */
                   debug_success("Set table locvar for %s", node->str().c_str());
                   node_var(node->lex->disassembly->operands.front());
             }
@@ -242,45 +242,7 @@ void luramas::ast::transformers::locvars::set_lv(std::shared_ptr<luramas::ast::a
 }
 
 void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr<luramas::ast::ast> &ast) {
-
-      /* Max jump out of jump compare with not being break(pre). */
-      auto jump_out = [&](const std::uintptr_t start, const std::uintptr_t end) mutable -> std::shared_ptr<luramas::ast::node> {
-            /* See if jump inside jump jumps out. */
-            std::shared_ptr<luramas::ast::node> jump_out = nullptr;
-            const auto range = ast->body->visit_range(start, end);
-            for (const auto &node : range) {
-
-                  if (node->lex->kind == luramas::il::lexer::inst_kinds::branch_condition) {
-
-                        const auto jmp = node->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
-
-                        if (jmp > end && (jump_out == nullptr || jmp >= jump_out->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr)) {
-
-                              /* Check too see if no break and no jump out before. */
-                              if (!node->has_expr(luramas::ast::element_kinds::break_)) {
-
-                                    /* Make sure no jumps from start -> node current. */
-                                    bool valid = true;
-                                    const auto range_ = ast->body->visit_range_current(node->address, end);
-                                    for (const auto &i : range_) {
-
-                                          if (i->lex->disassembly->op == luramas::il::arch::opcodes::OP_JUMP) {
-                                                valid = false;
-                                                break;
-                                          }
-                                    }
-
-                                    if (valid) {
-                                          jump_out = node;
-                                    }
-                              }
-                        }
-                  }
-            }
-
-            return jump_out;
-      };
-
+      return;
       auto all = ast->body->visit_all();
       for (auto &i : all) {
 
@@ -295,12 +257,12 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                   std::shared_ptr<luramas::ast::node> node_hit = nullptr; /* Prevents infinite looping if something goes wrong. */
 
                   /* Make sure it hasnt already been analyzed by another routine. */
-                  if (!i->has_expr(luramas::ast::element_kinds::condition_logical_start) &&
-                      !i->has_expr(luramas::ast::element_kinds::condition_logical) &&
-                      !i->has_expr(luramas::ast::element_kinds::condition_logical_end) &&
-                      !i->has_expr(luramas::ast::element_kinds::condition_concat_member) &&
-                      !i->has_expr(luramas::ast::element_kinds::condition_concat_start) &&
-                      !i->has_expr(luramas::ast::element_kinds::condition_concat_end)) {
+                  if (!i->has_elem(luramas::ast::element_kinds::condition_logical_start) &&
+                      !i->has_elem(luramas::ast::element_kinds::condition_logical) &&
+                      !i->has_elem(luramas::ast::element_kinds::condition_logical_end) &&
+                      !i->has_elem(luramas::ast::element_kinds::condition_concat_member) &&
+                      !i->has_elem(luramas::ast::element_kinds::condition_concat_start) &&
+                      !i->has_elem(luramas::ast::element_kinds::condition_concat_end)) {
 
                         /* Operation could be logical expression? */
                         bool predicted_logical = false;
@@ -329,9 +291,9 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
 
                               /* No compare routine */
                               if (i->lex->kind != luramas::il::lexer::inst_kinds::compare_dest &&
-                                  !i->has_expr(luramas::ast::element_kinds::condition_routine_start) &&
-                                  !i->has_expr(luramas::ast::element_kinds::condition_routine_end) &&
-                                  !i->has_expr(luramas::ast::element_kinds::condition_routine)) {
+                                  !i->has_elem(luramas::ast::element_kinds::desc_conditional_routine_start) &&
+                                  !i->has_elem(luramas::ast::element_kinds::desc_conditional_routine_end) &&
+                                  !i->has_elem(luramas::ast::element_kinds::desc_conditional_routine)) {
                                     debug_warning("No compare routine for %s", i->str().c_str());
                                     break;
                               }
@@ -348,7 +310,7 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                     break;
                               }
 
-                              auto current_jmp = (i->lex->kind == luramas::il::lexer::inst_kinds::compare_dest) ? 0u : i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr; /* Current jump target address. */
+                              auto current_jmp = (i->lex->kind == luramas::il::lexer::inst_kinds::compare_dest) ? 0u : i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr; /* Current jump target address. */
 
                               /* Check range for return if there is a return. It has a return so break, end concatation of branches. */
                               if (current_jmp) {
@@ -374,9 +336,9 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                     if (next_jmp != nullptr) {
 
                                           const auto jmp_prev = ast->body->visit_previous_addr(current_jmp);
-                                          const auto next_jmp_prev = ast->body->visit_previous_addr(next_jmp->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
+                                          const auto next_jmp_prev = ast->body->visit_previous_addr(next_jmp->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
 
-                                          if (jmp_prev != nullptr && next_jmp_prev != nullptr && condition_break(jmp_prev) && condition_break(next_jmp_prev)) {
+                                          if (jmp_prev != nullptr && next_jmp_prev != nullptr && stat_jump_break(jmp_prev) && stat_jump_break(next_jmp_prev)) {
 
                                                 /* Not same jump */
                                                 if (jmp_prev->address != next_jmp_prev->address) {
@@ -393,12 +355,11 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
 
                               /* There is a jump? */
                               if (current_jmp) {
-
                                     do {
                                           jump_out_n = jump_out_temp;
-                                          jump_out_temp = jump_out(
-                                              (jump_out_n == nullptr) ? i->address : jump_out_n->address,
-                                              (jump_out_n == nullptr) ? current_jmp : jump_out_n->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
+                                          // jump_out_temp = jump_out(
+                                          //     (jump_out_n == nullptr) ? i->address : jump_out_n->address,
+                                          //     (jump_out_n == nullptr) ? current_jmp : jump_out_n->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
                                     } while (jump_out_temp != nullptr);
                               }
 
@@ -409,10 +370,10 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                               } else {
 
                                     /* Check for compares with current branch. */
-                                    const auto compare_count = i->lex->count_operand_expr<luramas::il::lexer::operand_kinds::compare>();
+                                    const auto compare_count = i->lex->count_operand_kind<luramas::il::lexer::operand_kinds::compare>();
                                     if (!compares.empty() || !compares_double.empty()) {
 
-                                          const auto compare_operands = i->lex->operand_expr<luramas::il::lexer::operand_kinds::compare>();
+                                          const auto compare_operands = i->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>();
 
                                           if (compare_count == 1u && compares.size() == 1u) {
 
@@ -475,7 +436,7 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
 
                                           debug_line("Next is a compare dest on %s", next->str().c_str());
 
-                                          compares.push_back(next->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg);
+                                          compares.push_back(next->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg);
 
                                           /* Exceeded max of 2 routine is something else. */
                                           if (compares.size() > 2u) {
@@ -496,7 +457,7 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
 
                                                 debug_line("Previous is a compare dest at %s", prev->str().c_str());
 
-                                                compares_double.emplace_back(prev->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg);
+                                                compares_double.emplace_back(prev->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg);
 
                                                 /* Exceeded max of 2 routine is something else. */
                                                 if (compares_double.size() > 2u) {
@@ -552,16 +513,16 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                                 }
 
                                                 /* Jump data */
-                                                const auto next_jmp_target = next_jmp->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                                                const auto next_jmp_target = next_jmp->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
                                                 const auto next_jmp_target_node = ast->body->visit_addr(next_jmp_target);
 
                                                 /* Jump too same address possibly or? */
-                                                if (current_jmp == next_jmp->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr) {
+                                                if (current_jmp == next_jmp->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr) {
 
                                                       debug_line("Current jump = next jump on %s", next_jmp->str().c_str());
 
                                                       /* No compare routine */
-                                                      if (!next_inst->has_expr(luramas::ast::element_kinds::condition_routine_start) && !next_inst->has_expr(luramas::ast::element_kinds::condition_routine_end) && !next_inst->has_expr(luramas::ast::element_kinds::condition_routine)) {
+                                                      if (!next_inst->has_elem(luramas::ast::element_kinds::desc_conditional_routine_start) && !next_inst->has_elem(luramas::ast::element_kinds::desc_conditional_routine_end) && !next_inst->has_elem(luramas::ast::element_kinds::desc_conditional_routine)) {
 
                                                             debug_line("No compare routine for %s", next_inst->str().c_str());
 
@@ -594,7 +555,7 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
 
                                                                   debug_line("Current is branch condition.");
 
-                                                                  const auto jmp_target_next = i->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                                                                  const auto jmp_target_next = i->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
 
                                                                   /* Logical operation */
                                                                   if (ast->body->filled(i, ast->body->visit_previous_addr(jmp_target_next))) {
@@ -651,7 +612,7 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                                 }
 
                                                 /* Next leads too routine */
-                                                if (next_inst->has_expr(luramas::ast::element_kinds::condition_routine_start) || next_inst->has_expr(luramas::ast::element_kinds::condition_routine_end) || next_inst->has_expr(luramas::ast::element_kinds::condition_routine)) {
+                                                if (next_inst->has_elem(luramas::ast::element_kinds::desc_conditional_routine_start) || next_inst->has_elem(luramas::ast::element_kinds::desc_conditional_routine_end) || next_inst->has_elem(luramas::ast::element_kinds::desc_conditional_routine)) {
 
                                                       debug_line("Next leads to condition for %s", next_inst->str().c_str());
 
@@ -666,7 +627,7 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                                       }
 
                                                       /* Next has loadb with jump. */
-                                                      if (next->lex->disassembly->op == luramas::il::arch::opcodes::OP_LOADBOOL && next->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp) {
+                                                      if (next->lex->disassembly->op == luramas::il::arch::opcodes::OP_LOADBOOL && next->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp) {
 
                                                             /* Singular */
                                                             if (next_jmp_target == (next->address + next->lex->disassembly->len)) {
@@ -681,15 +642,15 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                                       if (prev->lex->disassembly->op == luramas::il::arch::opcodes::OP_LOADBOOL) {
 
                                                             /* Doesnt have jump check previous. */
-                                                            if (!prev->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp) {
+                                                            if (!prev->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp) {
 
                                                                   const auto p_prev = ast->body->visit_previous_addr(prev->address);
 
                                                                   /* Has previous loadb jump.  */
-                                                                  if (p_prev->lex->disassembly->op == luramas::il::arch::opcodes::OP_LOADBOOL && p_prev->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp) {
+                                                                  if (p_prev->lex->disassembly->op == luramas::il::arch::opcodes::OP_LOADBOOL && p_prev->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->dis.jmp) {
 
                                                                         /* Check logical could be locvar. */
-                                                                        if (luramas::ast::transformers::registers::logical_dest_register(ast, p_prev, p_prev->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg)) {
+                                                                        if (luramas::ast::transformers::registers::logical_dest_register(ast, p_prev, p_prev->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg)) {
                                                                               break;
                                                                         }
 
@@ -702,11 +663,11 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                                             } else {
 
                                                                   /* Target goes to loadb, same regs and jump. */
-                                                                  if (next_jmp_target_node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg == prev->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg) {
+                                                                  if (next_jmp_target_node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg == prev->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg) {
                                                                         /* Set next and contiue */
 
                                                                         /* Check logical could be locvar. */
-                                                                        if (luramas::ast::transformers::registers::logical_dest_register(ast, next_jmp_target_node, next_jmp_target_node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg)) {
+                                                                        if (luramas::ast::transformers::registers::logical_dest_register(ast, next_jmp_target_node, next_jmp_target_node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg)) {
                                                                               break;
                                                                         }
 
@@ -721,7 +682,7 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                                 const auto cond_jumps = std::get<std::vector<std::shared_ptr<luramas::ast::node>>>(ast->body->visit_type_next_addr<luramas::il::lexer::inst_kinds::branch_condition>(true, i->address));
                                                 for (const auto &jmp : cond_jumps) {
 
-                                                      const auto jmp_target = jmp->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
+                                                      const auto jmp_target = jmp->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr;
                                                       const auto next = std::get<std::shared_ptr<luramas::ast::node>>(ast->body->visit_next_type_addr<luramas::il::lexer::inst_kinds::branch_condition>(jmp->address, false));
 
                                                       /* No next jump. */
@@ -730,19 +691,12 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                                                       }
                                                 }
 
-                                                /* Next conditional */
-                                                // if (next_inst->has_expr(luramas::ast::element_kinds::conditonal_filled_not_used)) {
-                                                //       debug_result("Next inst is filled for %s", next_inst->str().c_str());
-                                                //       i = next_jmp;
-                                                //       continue;
-                                                // }
-
                                                 /* Check next jump loc previous for jumpout. */
-                                                const auto next_loc_prev_jmp = ast->body->visit_previous_addr(next_jmp->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
-                                                if (next_loc_prev_jmp->has_expr(luramas::ast::element_kinds::conditonal_jumps_out)) {
+                                                const auto next_loc_prev_jmp = ast->body->visit_previous_addr(next_jmp->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
+                                                if (next_loc_prev_jmp->has_elem(luramas::ast::element_kinds::desc_conditional_jumpout)) {
 
                                                       debug_result("Next jump loc previous jumps out for %s", next_jmp->str().c_str());
-                                                      i = ast->body->visit_prev_type<luramas::il::lexer::inst_kinds::branch_condition>(next_loc_prev_jmp->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
+                                                      i = ast->body->visit_prev_type<luramas::il::lexer::inst_kinds::branch_condition>(next_loc_prev_jmp->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr);
 
                                                       continue;
                                                 }
@@ -755,7 +709,7 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
 
                         } while (true);
 
-                        cached_init->add_expr<luramas::ast::element_kinds::condition_logical_start>();
+                        cached_init->add_elem<luramas::ast::element_kinds::condition_logical_start>();
                         debug_result("Cached init added expr conditon logical start on %s", cached_init->str().c_str());
                         debug_line("Current is currently %s", i->str().c_str());
 
@@ -776,12 +730,12 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
 
                               debug_line("Is predicted logical.");
 
-                              i->add_expr<luramas::ast::element_kinds::conditional_expression_predicted>();
+                              i->add_elem<luramas::ast::element_kinds::conditional_expression_predicted>();
                               debug_success("Added conditional expression predicted too current on %s", i->str().c_str());
 
                               /* Fix i too previous instruction from jump. */
                               const auto prev_cond = ast->body->visit_prev_type_current<luramas::il::lexer::inst_kinds::branch_condition>(i->address);
-                              if (prev_cond != nullptr && i->address == prev_cond->lex->operand_expr<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr) {
+                              if (prev_cond != nullptr && i->address == prev_cond->lex->operand_kind<luramas::il::lexer::operand_kinds::jmpaddr>().front()->ref_addr) {
 
                                     i = ast->body->visit_previous_addr(i->address);
                                     debug_result("Mutated current for predicted logical too %s", i->str().c_str());
@@ -793,10 +747,10 @@ void luramas::ast::transformers::locvars::set_logical_operations(std::shared_ptr
                         /* Members */
                         const auto range = ast->body->visit_range(cached_init->address, i->address);
                         for (const auto &i : range)
-                              i->add_expr<luramas::ast::element_kinds::condition_logical>();
+                              i->add_elem<luramas::ast::element_kinds::condition_logical>();
 
                         /* End */
-                        i->add_expr<luramas::ast::element_kinds::condition_logical_end>();
+                        i->add_elem<luramas::ast::element_kinds::condition_logical_end>();
                         debug_success("Added condition logical end expr too %s", i->str().c_str());
                   }
             }

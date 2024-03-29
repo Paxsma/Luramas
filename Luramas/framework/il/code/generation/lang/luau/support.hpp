@@ -9,7 +9,7 @@ namespace luramas {
             namespace luau {
 
                   /* Arith instruction that are supported as assignments. (You can leave it empty if every assignment is supported). */
-                  static constexpr std::array supported_arith_assignment = {
+                  constexpr std::array supported_arith_assignment = {
                       ast::bin_kinds::add_,
                       ast::bin_kinds::sub_,
                       ast::bin_kinds::mod_,
@@ -18,7 +18,7 @@ namespace luramas {
                       ast::bin_kinds::pow_};
 
                   /* Ternarys are supported? */
-                  static constexpr bool supported_ternarys = false;
+                  constexpr bool supported_ternarys = false;
 
             } // namespace luau
 

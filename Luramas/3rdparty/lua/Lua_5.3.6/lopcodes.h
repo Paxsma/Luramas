@@ -84,11 +84,11 @@ enum OpMode { iABC,
 */
 
 #define GET_OPCODE(i) (cast(OpCode, ((i) >> POS_OP) & MASK1(SIZE_OP, 0)))
-#define SET_OPCODE(i, o) ((i) = (((i)&MASK0(SIZE_OP, POS_OP)) | \
+#define SET_OPCODE(i, o) ((i) = (((i) & MASK0(SIZE_OP, POS_OP)) | \
                                  ((cast(Instruction, o) << POS_OP) & MASK1(SIZE_OP, POS_OP))))
 
 #define getarg(i, pos, size) (cast(int, ((i) >> pos) & MASK1(size, 0)))
-#define setarg(i, v, pos, size) ((i) = (((i)&MASK0(size, pos)) | \
+#define setarg(i, v, pos, size) ((i) = (((i) & MASK0(size, pos)) | \
                                         ((cast(Instruction, v) << pos) & MASK1(size, pos))))
 
 #define GETARG_A(i) getarg(i, POS_A, SIZE_A)
@@ -123,7 +123,7 @@ enum OpMode { iABC,
 #define BITRK (1 << (SIZE_B - 1))
 
 /* test whether value is a constant */
-#define ISK(x) ((x)&BITRK)
+#define ISK(x) ((x) & BITRK)
 
 /* gets the index of the constant */
 #define INDEXK(r) ((int)(r) & ~BITRK)

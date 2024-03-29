@@ -17,7 +17,10 @@ namespace luramas {
                               add
                         };
 
-                        /* Parse data from original bytecode to IL. */
+                        /* 
+                            Parse data from original bytecode to IL. 
+                            Before running parse you need to use the append or remove functions to add or remove any IL, this ensure saftey for the IL.
+                        */
                         template <typename dism_t /* Original disassembly vector i.e. disassembly. */>
                         class parser_manager {
 
@@ -95,7 +98,7 @@ namespace luramas {
 
                               /* Remove disassembly for parsing disassembly. */
                               void remove(const std::shared_ptr<luramas::il::disassembly> &disassembly) {
-                                    this->sync_idx--;
+                                    --this->sync_idx;
                                     this->parsing_dism.emplace_back(std::make_tuple(action::remove, 0u, disassembly));
                                     return;
                               }

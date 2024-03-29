@@ -95,7 +95,6 @@ namespace registers {
                         case type::global: {
                               return "global";
                         }
-
                         default: {
                               throw std::runtime_error("Unkown type for register str.");
                         }
@@ -329,7 +328,7 @@ namespace registers {
             }
 
             template <bool front = false /* Append at front of vector? */>
-            void append_compare(const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &lvalue, const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &rvalue = nullptr, const luramas::ir::data::constant::logical_operations_kinds operation = luramas::ir::data::constant::logical_operations_kinds::nothing) {
+            void append_compare(const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &lvalue, const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &rvalue = nullptr, const luramas::ast::bin_kinds operation = luramas::ast::bin_kinds::nothing) {
 
                   /* null */
                   if (this->data == nullptr) {
@@ -352,7 +351,7 @@ namespace registers {
                   return;
             }
 
-            template <luramas::ir::data::constant::logical_operations_kinds operation, bool front = false /* Append at front of vector? */>
+            template <luramas::ast::bin_kinds operation, bool front = false /* Append at front of vector? */>
             void append_compare_operator() {
 
                   /* null */
@@ -376,7 +375,7 @@ namespace registers {
             }
 
             /* Append compare opcode */
-            void append_compare_op(const luramas::il::arch::opcodes op, const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &lvalue, const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &rvalue = nullptr, const bool opposite = false, const bool parenth = true) {
+            void append_compare_op(const luramas::ast::bin_kinds op, const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &lvalue, const std::shared_ptr<luramas::ir::ir_expr_data::line::expression_data> &rvalue = nullptr, const bool opposite = false, const bool parenth = true) {
 
                   /* null */
                   if (this->data == nullptr) {
@@ -384,63 +383,6 @@ namespace registers {
                   }
 
                   this->data->constant = luramas::ir::data::constant::constant_kinds::compares;
-                  auto lop = luramas::ir::data::constant::logical_operations_kinds::nothing;
-
-                  /* OP -> enum TODO put in ast stat  */
-                  switch (op) {
-
-                        case luramas::il::arch::opcodes::OP_SETIFLESS:
-                        case luramas::il::arch::opcodes::OP_JUMPIFLESS: {
-                              lop = (!opposite) ? luramas::ir::data::constant::logical_operations_kinds::lt : luramas::ir::data::constant::logical_operations_kinds::gt;
-                              break;
-                        }
-
-                        case luramas::il::arch::opcodes::OP_SETIFEQUAL:
-                        case luramas::il::arch::opcodes::OP_JUMPIFEQUAL: {
-                              lop = (!opposite) ? luramas::ir::data::constant::logical_operations_kinds::eq : luramas::ir::data::constant::logical_operations_kinds::ne;
-                              break;
-                        }
-
-                        case luramas::il::arch::opcodes::OP_SETIFLESSEQUAL:
-                        case luramas::il::arch::opcodes::OP_JUMPIFLESSEQUAL: {
-                              lop = (!opposite) ? luramas::ir::data::constant::logical_operations_kinds::lte : luramas::ir::data::constant::logical_operations_kinds::gte;
-                              break;
-                        }
-
-                        case luramas::il::arch::opcodes::OP_SETIFNOTEQUAL:
-                        case luramas::il::arch::opcodes::OP_JUMPIFNOTEQUAL: {
-                              lop = (!opposite) ? luramas::ir::data::constant::logical_operations_kinds::ne : luramas::ir::data::constant::logical_operations_kinds::eq;
-                              break;
-                        }
-
-                        case luramas::il::arch::opcodes::OP_SETIFGREATEREQUAL:
-                        case luramas::il::arch::opcodes::OP_JUMPIFGREATEREQUAL: {
-                              lop = (!opposite) ? luramas::ir::data::constant::logical_operations_kinds::gte : luramas::ir::data::constant::logical_operations_kinds::lte;
-                              break;
-                        }
-
-                        case luramas::il::arch::opcodes::OP_SETIFGREATER:
-                        case luramas::il::arch::opcodes::OP_JUMPIFGREATER: {
-                              lop = (!opposite) ? luramas::ir::data::constant::logical_operations_kinds::gt : luramas::ir::data::constant::logical_operations_kinds::lt;
-                              break;
-                        }
-
-                        case luramas::il::arch::opcodes::OP_SETIF:
-                        case luramas::il::arch::opcodes::OP_JUMPIF: {
-                              lop = (!opposite) ? luramas::ir::data::constant::logical_operations_kinds::nothing : luramas::ir::data::constant::logical_operations_kinds::nt;
-                              break;
-                        }
-
-                        case luramas::il::arch::opcodes::OP_SETIFNOT:
-                        case luramas::il::arch::opcodes::OP_JUMPIFNOT: {
-                              lop = (!opposite) ? luramas::ir::data::constant::logical_operations_kinds::nt : luramas::ir::data::constant::logical_operations_kinds::nothing;
-                              break;
-                        }
-
-                        default: {
-                              break;
-                        }
-                  }
 
                   /* Open parenthesis: "(" */
                   if (parenth) {
@@ -448,7 +390,7 @@ namespace registers {
                   }
 
                   /* Emit compare */
-                  this->append_compare(lvalue, rvalue, lop);
+                  this->append_compare(lvalue, rvalue, op);
 
                   /* Close parenthesis: ")" */
                   if (parenth) {
@@ -486,7 +428,6 @@ namespace registers {
             std::unordered_map<std::intptr_t, std::shared_ptr<reg>> registers;
 
           public:
-
             /* See if register already exists. */
             bool reg_exists(const std::intptr_t reg) {
                   return this->registers.find(reg) != this->registers.end();
@@ -544,8 +485,8 @@ namespace type_handler {
                   case luramas::il::arch::opcodes::OP_SHR:
                   case luramas::il::arch::opcodes::OP_IDIV:
                   case luramas::il::arch::opcodes::OP_OR: {
-                        retn.first = regs[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
-                        retn.second = regs[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().back()->dis.reg]->data;
+                        retn.first = regs[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
+                        retn.second = regs[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().back()->dis.reg]->data;
                         return retn;
                   }
 
@@ -561,8 +502,8 @@ namespace type_handler {
                   case luramas::il::arch::opcodes::OP_SHRK:
                   case luramas::il::arch::opcodes::OP_IDIVK:
                   case luramas::il::arch::opcodes::OP_ORK: {
-                        retn.first = regs[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
-                        retn.second = luramas::ir::ir_expr_data::make_expression::datatype_kvalue(kvalues[node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().back()->dis.kvalue_idx]);
+                        retn.first = regs[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
+                        retn.second = luramas::ir::ir_expr_data::make_expression::datatype_kvalue(kvalues[node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().back()->dis.kvalue_idx]);
                         return retn;
                   }
 
@@ -578,8 +519,8 @@ namespace type_handler {
                   case luramas::il::arch::opcodes::OP_SHRN:
                   case luramas::il::arch::opcodes::OP_IDIVN:
                   case luramas::il::arch::opcodes::OP_ORN: {
-                        retn.first = regs[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
-                        retn.second = luramas::ir::ir_expr_data::make_expression::datatype_integer(node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().back()->dis.integer);
+                        retn.first = regs[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
+                        retn.second = luramas::ir::ir_expr_data::make_expression::datatype_integer(node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().back()->dis.integer);
                         return retn;
                   }
 
@@ -615,7 +556,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   for (auto i = 0u; i < expr.second; ++i)
                         switch (expr.first) {
 
-                              case luramas::ast::element_kinds::repeat_: {
+                              case luramas::ast::element_kinds::stat_repeat: {
 
                                     ++scope_id;
 
@@ -623,22 +564,22 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     regs.emplace_back(regs.back().clone());
 
                                     /* Emit repeat */
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                     lines.back()->expression->emitter_constant_repeat();
 
                                     break;
                               }
 
                               case luramas::ast::element_kinds::table_start:
-                              case luramas::ast::element_kinds::concat_routine_start:
-                              case luramas::ast::element_kinds::call_routine_start: {
+                              case luramas::ast::element_kinds::desc_concat_routine_start:
+                              case luramas::ast::element_kinds::desc_call_routine_start: {
 
                                     /* Write table start to reg. */
                                     if (expr.first == luramas::ast::element_kinds::table_start) {
 
-                                          const auto reg = node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
+                                          const auto reg = node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
 
-                                          if (!node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::dest>()) {
+                                          if (!node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::dest>()) {
                                                 throw std::runtime_error("No dest operand for table start.");
                                           }
 
@@ -659,8 +600,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                               }
 
                               case luramas::ast::element_kinds::table_end:
-                              case luramas::ast::element_kinds::concat_routine_end:
-                              case luramas::ast::element_kinds::call_routine_end: {
+                              case luramas::ast::element_kinds::desc_concat_routine_end:
+                              case luramas::ast::element_kinds::desc_call_routine_end: {
 
                                     /* Dec expr */
                                     if (regs.back()[flag_compare]->special.inside_expr) {
@@ -674,7 +615,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     break;
                               }
 
-                              case luramas::ast::element_kinds::scope_end: {
+                              case luramas::ast::element_kinds::stat_scope_end: {
 
                                     --scope_id;
 
@@ -682,16 +623,16 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     regs.pop_back();
 
                                     /* Emit end */
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                     lines.back()->expression->emitter_constant_end();
 
                                     break;
                               }
 
-                              case luramas::ast::element_kinds::break_: {
+                              case luramas::ast::element_kinds::stat_loop_break: {
 
                                     /* Emit break */
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                     lines.back()->expression->emitter_constant_break();
 
                                     break;
@@ -699,16 +640,16 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                               case luramas::ast::element_kinds::conditional_expression_end: {
 
-                                    if (node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::source>()) {
-                                          regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->set<registers::type::expr, true>(regs.back()[flag_compare]->data);
+                                    if (node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::source>()) {
+                                          regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->set<registers::type::expr, true>(regs.back()[flag_compare]->data);
                                           regs.back()[flag_compare]->clear(true);
                                     }
 
                                     break;
                               }
 
-                              case luramas::ast::element_kinds::if_:
-                              case luramas::ast::element_kinds::elseif_: {
+                              case luramas::ast::element_kinds::stat_if:
+                              case luramas::ast::element_kinds::stat_elseif: {
 
                                     ++scope_id;
 
@@ -717,17 +658,17 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     const auto cmp1 = cmp.cmp1;
                                     const auto cmp2 = cmp.cmp2;
 
-                                    regs.back()[flag_compare]->append_compare_op(node->lex->disassembly->op, cmp1, cmp2, node->branches.opposite, false);
+                                    regs.back()[flag_compare]->append_compare_op(node->bin_kind, cmp1, cmp2, node->branches.opposite, false);
 
                                     if (optimizations->compare.parenthesis) {
                                           regs.back()[flag_compare]->scope_compare();
                                     }
 
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                     lines.back()->expression = regs.back()[flag_compare]->data;
 
                                     /* if */
-                                    if (expr.first == luramas::ast::element_kinds::if_) {
+                                    if (expr.first == luramas::ast::element_kinds::stat_if) {
                                           lines.back()->expression->emitter_constant_if();
                                     } else {
                                           lines.back()->expression->emitter_constant_elseif();
@@ -737,28 +678,28 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     regs.back()[flag_compare]->new_(true);
 
                                     /* Only scope for if, elseif gets handled speratly. */
-                                    if (expr.first == luramas::ast::element_kinds::if_) {
+                                    if (expr.first == luramas::ast::element_kinds::stat_if) {
                                           regs.emplace_back(regs.back().clone());
                                     }
 
                                     /* Add break */
-                                    if (node->has_expr(luramas::ast::element_kinds::condition_break)) {
+                                    if (node->has_elem(luramas::ast::element_kinds::stat_jump_break)) {
 
                                           /* Emit break */
-                                          lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                          lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                           lines.back()->expression->emitter_constant_break();
 
                                           /* Emit end */
-                                          lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                          lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                           lines.back()->expression->emitter_constant_end();
                                     }
 
                                     break;
                               }
-                              case luramas::ast::element_kinds::else_: {
+                              case luramas::ast::element_kinds::stat_else: {
 
                                     /* Emit else. */
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                     lines.back()->expression->emitter_constant_else();
 
                                     /* Remove last scope and replicate next. */
@@ -785,26 +726,26 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     regs.back()[flag_compare]->set<registers::type::expr>(true);
                                     break;
                               }
-                              case luramas::ast::element_kinds::while_: {
+                              case luramas::ast::element_kinds::stat_while: {
 
                                     ++scope_id;
 
                                     /* Has compare **Compile compare too get emitted** */
-                                    if (node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::compare>()) {
+                                    if (node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::compare>()) {
 
                                           /* While statement */
                                           const auto cmp = regs.back()[flag_cmp]->flag.cmp;
                                           const auto cmp1 = cmp.cmp1;
                                           const auto cmp2 = cmp.cmp2;
 
-                                          regs.back()[flag_compare]->append_compare_op(node->lex->disassembly->op, cmp1, cmp2, node->branches.opposite, false);
+                                          regs.back()[flag_compare]->append_compare_op(node->bin_kind, cmp1, cmp2, node->branches.opposite, false);
                                     }
 
                                     if (optimizations->compare.parenthesis) {
                                           regs.back()[flag_compare]->scope_compare();
                                     }
 
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                     lines.back()->expression = regs.back()[flag_compare]->data;
                                     lines.back()->expression->emitter_constant_while();
 
@@ -816,26 +757,26 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                                     break;
                               }
-                              case luramas::ast::element_kinds::until_: {
+                              case luramas::ast::element_kinds::stat_repeat_end: {
 
                                     --scope_id;
 
                                     /* Has compare **Compile compare too get emitted** */
-                                    if (node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::compare>()) {
+                                    if (node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::compare>()) {
 
                                           /* Until statement */
                                           const auto cmp = regs.back()[flag_cmp]->flag.cmp;
                                           const auto cmp1 = cmp.cmp1;
                                           const auto cmp2 = cmp.cmp2;
 
-                                          regs.back()[flag_compare]->append_compare_op(node->lex->disassembly->op, cmp1, cmp2, node->branches.opposite, false);
+                                          regs.back()[flag_compare]->append_compare_op(node->bin_kind, cmp1, cmp2, node->branches.opposite, false);
                                     }
 
                                     if (optimizations->compare.parenthesis) {
                                           regs.back()[flag_compare]->scope_compare();
                                     }
 
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                                     lines.back()->expression = regs.back()[flag_compare]->data;
                                     lines.back()->expression->emitter_constant_until();
 
@@ -848,11 +789,11 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     break;
                               }
 
-                              case luramas::ast::element_kinds::for_iv_start: {
+                              case luramas::ast::element_kinds::stat_for_iv_start: {
 
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(++scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(++scope_id, luramas::ir::ir_expr_data::make::expression_data());
 
-                                    static constexpr auto reserved = 2u + 1u; /* 2 is reserved 1 for new slot. */
+                                    constexpr auto reserved = 2u + 1u; /* 2 is reserved 1 for new slot. */
 
                                     /* Replicate next. */
                                     regs.emplace_back(regs.back().clone());
@@ -861,12 +802,12 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     /* K */
                                     const auto K = (node->loops.iteration_names.find(begin + reserved) != node->loops.iteration_names.end()) ? node->loops.iteration_names[begin + reserved] : luramas::emitter_ir::common::locvar::make_locvar_alphabetical_name(config->loop_variable_prefix, suffixes::loop_variable_suffix++, config->iteration_suffix_char);
                                     regs.back()[begin + reserved]->set_datatype_var<registers::type::var>(K);
-                                    lines.back()->expression->emitter_datatype_for_var(K);
+                                    lines.back()->expression->emitter_datatype_for_var(luramas::ir::ir_expr_data::make_expression::datatype_var(K));
 
                                     /* V */
                                     const auto V = (node->loops.iteration_names.find(begin + reserved + 1u) != node->loops.iteration_names.end()) ? node->loops.iteration_names[begin + reserved + 1u] : luramas::emitter_ir::common::locvar::make_locvar_alphabetical_name(config->loop_variable_prefix_2, suffixes::loop_variable_prefix_2_suffix++, config->iteration_suffix_char);
                                     regs.back()[begin + reserved + 1u]->set_datatype_var<registers::type::var>(V);
-                                    lines.back()->expression->emitter_datatype_for_var(V);
+                                    lines.back()->expression->emitter_datatype_for_var(luramas::ir::ir_expr_data::make_expression::datatype_var(V));
 
                                     /* Compile iteration statement. */
                                     for (auto i = 0u; i < 3u; ++i) {
@@ -890,28 +831,28 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                                     break;
                               }
-                              case luramas::ast::element_kinds::for_start: {
+                              case luramas::ast::element_kinds::stat_for_start: {
 
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(++scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(++scope_id, luramas::ir::ir_expr_data::make::expression_data());
 
-                                    static constexpr auto reserved = 2u + 1u; /* 2 is reserved 1 for new slot. */
+                                    constexpr auto reserved = 2u + 1u; /* 2 is reserved 1 for new slot. */
 
                                     const auto lex = node->loops.end_node->lex; /* OP_FORLOOPG */
 
                                     /* Replicate next. */
                                     regs.emplace_back(regs.back().clone());
 
-                                    const auto begin = lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
-                                    const auto count = lex->operand_expr<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+                                    const auto begin = lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
+                                    const auto count = lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
 
                                     /* Vars */
-                                    for (auto i = 0u; i < count; ++i) {
+                                    for (auto i = 0; i < count; ++i) {
 
                                           /* Make iterating variable name and compile it. */
                                           const auto name = (node->loops.iteration_names.find(i + begin + reserved) != node->loops.iteration_names.end()) ? node->loops.iteration_names[i + begin + reserved] : luramas::emitter_ir::common::locvar::make_locvar_alphabetical_name(config->loop_variable_prefix, suffixes::loop_variable_suffix++, config->iteration_suffix_char);
 
                                           regs.back()[i + begin + reserved]->set_datatype_var<registers::type::var>(name);
-                                          lines.back()->expression->emitter_datatype_for_var(name);
+                                          lines.back()->expression->emitter_datatype_for_var(luramas::ir::ir_expr_data::make_expression::datatype_var(name));
                                     }
 
                                     /* Iterator */
@@ -934,14 +875,14 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                                     break;
                               }
-                              case luramas::ast::element_kinds::for_n_start: {
+                              case luramas::ast::element_kinds::stat_for_n_start: {
 
-                                    lines()->set<luramas::ir::data::kinds::expression, true>(++scope_id);
+                                    lines()->set<luramas::ir::data::kinds::expression>(++scope_id, luramas::ir::ir_expr_data::make::expression_data());
 
                                     /* Replicate next. */
                                     regs.emplace_back(regs.back().clone());
 
-                                    const auto sources = node->loops.end_node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>(); /* OP_FORLOOPN */
+                                    const auto sources = node->loops.end_node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>(); /* OP_FORLOOPN */
                                     const auto start = sources.front()->dis.reg;
                                     const auto max = sources[1]->dis.reg;
                                     const auto inc = sources.back()->dis.reg;
@@ -960,12 +901,12 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                           lines.back()->expression->emitter_datatype_for_iterator<true>(regs.back()[inc]->data);
                                     }
 
-                                    lines.back()->expression->emitter_datatype_for_var<true>(iterate);
+                                    lines.back()->expression->emitter_datatype_for_var<true>(luramas::ir::ir_expr_data::make_expression::datatype_var(iterate));
 
                                     break;
                               }
 
-                              case luramas::ast::element_kinds::exit_pre: {
+                              case luramas::ast::element_kinds::desc_exit_pre: {
                                     return;
                               }
 
@@ -1111,7 +1052,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
             str << "*	[exprs]: " << std::endl;
             for (const auto &p : node->expr)
-                  str << "*		" << node->expr_str(p) << std::endl;
+                  str << "*		" << node->elem_str(p) << std::endl;
 
 #if !DEBUG_IR_LIFTER_OPERANDS_PRINT_OVERRIDE
             std::cout << str.str() << std::endl;
@@ -1122,7 +1063,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
 #endif
 
-            if (node->has_expr(luramas::ast::element_kinds::dead_instruction)) {
+            if (node->has_elem(luramas::ast::element_kinds::desc_dead_instruction)) {
                   continue;
             }
 
@@ -1182,14 +1123,14 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                   /* Nop, Break, Depricated opcodes */
                   case luramas::il::arch::opcodes::OP_NOP:
-                  case luramas::il::arch::opcodes::OP_INITVARARGS: /* Unused */ {
+                  case luramas::il::arch::opcodes::OP_RESUME: /* Unused */ {
                         break;
                   }
 
                   /* Load */
                   case luramas::il::arch::opcodes::OP_LOADNONE: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
 
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
                         data->emitter_datatype_none();
@@ -1205,7 +1146,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1221,18 +1162,17 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                         break;
                   }
-
                   case luramas::il::arch::opcodes::OP_LOADINT:
                   case luramas::il::arch::opcodes::OP_LOADBOOL: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
 
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
 
                         if (current_instruction_opcode == luramas::il::arch::opcodes::OP_LOADINT) {
-                              data->emitter_datatype_integer(node->lex->operand_expr<luramas::il::lexer::operand_kinds::integer>().front()->dis.integer);
+                              data->emitter_datatype_integer(node->lex->operand_kind<luramas::il::lexer::operand_kinds::integer>().front()->dis.integer);
                         } else {
-                              data->emitter_datatype_boolean(node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().front()->dis.boolean);
+                              data->emitter_datatype_boolean(node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.boolean);
                         }
 
                         logical_expression_dest(node, regs, data);
@@ -1246,7 +1186,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var. */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1262,11 +1202,10 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                         break;
                   }
-
                   case luramas::il::arch::opcodes::OP_LOADKVAL: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto source = ast->il->kval[node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue_embeded>().front()->dis.kvalue_idx];
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto source = ast->il->kval[node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue_embeded>().front()->dis.kvalue_idx];
 
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
                         data->emitter_datatype_kvalue(source->type, source->str());
@@ -1280,7 +1219,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var. */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1299,16 +1238,16 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                   case luramas::il::arch::opcodes::OP_MOVE: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto source = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto source = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
 
                         /* Multret call */
-                        if (node->has_expr(luramas::ast::element_kinds::call_multret_start) || node->has_expr(luramas::ast::element_kinds::call_multret_member) || node->has_expr(luramas::ast::element_kinds::call_multret_end)) {
+                        if (node->has_elem(luramas::ast::element_kinds::call_multret_start) || node->has_elem(luramas::ast::element_kinds::call_multret_member) || node->has_elem(luramas::ast::element_kinds::call_multret_end)) {
 
                               auto mul = regs.back()[flag_multret];
                               mul->flag.multret.exprs.emplace_back(dest->data->clone());
 
-                              if (node->has_expr(luramas::ast::element_kinds::call_multret_end)) {
+                              if (node->has_elem(luramas::ast::element_kinds::call_multret_end)) {
 
                                     lines()->set<luramas::ir::data::kinds::statement>(scope_id);
                                     lines.back()->statement.set(mul->flag.multret.exprs, mul->sub_data);
@@ -1328,7 +1267,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1352,8 +1291,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   case luramas::il::arch::opcodes::OP_BITNOT:
                   case luramas::il::arch::opcodes::OP_PLUS: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto source = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto source = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
 
                         auto data = source->data->clone();
                         data->emitter_expr_unary(node->bin_kind);
@@ -1369,7 +1308,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var. */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1392,8 +1331,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         auto flag = regs.back()[flag_cmp];
                         flag->flag.cmp.clear();
 
-                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
-                        flag->flag.cmp.cmp2 = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::compare>().back()->dis.reg]->data;
+                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
+                        flag->flag.cmp.cmp2 = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>().back()->dis.reg]->data;
 
                         break;
                   }
@@ -1402,8 +1341,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         auto flag = regs.back()[flag_cmp];
                         flag->flag.cmp.clear();
 
-                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
-                        flag->flag.cmp.cmp2 = luramas::ir::ir_expr_data::make_expression::datatype_integer(node->lex->operand_expr<luramas::il::lexer::operand_kinds::integer>().front()->dis.integer);
+                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
+                        flag->flag.cmp.cmp2 = luramas::ir::ir_expr_data::make_expression::datatype_integer(node->lex->operand_kind<luramas::il::lexer::operand_kinds::integer>().front()->dis.integer);
 
                         break;
                   }
@@ -1412,8 +1351,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         auto flag = regs.back()[flag_cmp];
                         flag->flag.cmp.clear();
 
-                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
-                        flag->flag.cmp.cmp2 = luramas::ir::ir_expr_data::make_expression::datatype_kvalue(ast->il->kval[node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx]);
+                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
+                        flag->flag.cmp.cmp2 = luramas::ir::ir_expr_data::make_expression::datatype_kvalue(ast->il->kval[node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx]);
 
                         break;
                   }
@@ -1422,7 +1361,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         auto flag = regs.back()[flag_cmp];
                         flag->flag.cmp.clear();
 
-                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
+                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
                         flag->flag.cmp.cmp2 = luramas::ir::ir_expr_data::make_expression::datatype_none();
 
                         break;
@@ -1431,8 +1370,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                         auto flag = regs.back()[flag_cmp];
                         flag->flag.cmp.clear();
-
-                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
+                        flag->flag.cmp.cmp1 = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg]->data;
 
                         break;
                   }
@@ -1440,8 +1378,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                         auto flag = regs.back()[flag_cmp];
                         flag->flag.cmp.clear();
-
-                        flag->flag.cmp.cmp1 = luramas::ir::ir_expr_data::make_expression::datatype_integer(node->lex->operand_expr<luramas::il::lexer::operand_kinds::integer>().front()->dis.integer);
+                        flag->flag.cmp.cmp1 = luramas::ir::ir_expr_data::make_expression::datatype_integer(node->lex->operand_kind<luramas::il::lexer::operand_kinds::integer>().front()->dis.integer);
 
                         break;
                   }
@@ -1449,8 +1386,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                         auto flag = regs.back()[flag_cmp];
                         flag->flag.cmp.clear();
-
-                        flag->flag.cmp.cmp1 = luramas::ir::ir_expr_data::make_expression::datatype_kvalue(ast->il->kval[node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx]);
+                        flag->flag.cmp.cmp1 = luramas::ir::ir_expr_data::make_expression::datatype_kvalue(ast->il->kval[node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx]);
 
                         break;
                   }
@@ -1458,7 +1394,6 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                         auto flag = regs.back()[flag_cmp];
                         flag->flag.cmp.clear();
-
                         flag->flag.cmp.cmp1 = luramas::ir::ir_expr_data::make_expression::datatype_none();
 
                         break;
@@ -1477,8 +1412,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         /* Only handles conditional for compare flag. */
 
                         /* Gets handled ahead of time just skip opcode. */
-                        if (node->has_expr(luramas::ast::element_kinds::if_) || node->has_expr(luramas::ast::element_kinds::elseif_) ||
-                            node->has_expr(luramas::ast::element_kinds::while_) || node->has_expr(luramas::ast::element_kinds::until_)) {
+                        if (node->has_elem(luramas::ast::element_kinds::stat_if) || node->has_elem(luramas::ast::element_kinds::stat_elseif) ||
+                            node->has_elem(luramas::ast::element_kinds::stat_while) || node->has_elem(luramas::ast::element_kinds::stat_repeat_end)) {
                               break;
                         }
 
@@ -1506,22 +1441,21 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                         /* Get next conditional loadb. */
                         std::shared_ptr<registers::reg> next_condition = nullptr;
-                        if (node->has_expr(luramas::ast::element_kinds::condition_emit_next)) {
-
-                              next_condition = regs.back()[(*(&node + 1u))->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        if (node->has_elem(luramas::ast::element_kinds::condition_emit_next)) {
+                              next_condition = regs.back()[(*(&node + 1u))->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
                               next_condition->clear();
                               next_condition->type = registers::type::expr;
                         }
 
                         /* Emit compare next if it is not nullptr else just emit too compare flag. */
                         if (next_condition != nullptr) {
-                              next_condition->append_compare_op(current_instruction_opcode, cmp1, cmp2, node->branches.opposite, false);
+                              next_condition->append_compare_op(node->bin_kind, cmp1, cmp2, node->branches.opposite, false);
                         } else {
-                              regs.back()[flag_compare]->append_compare_op(current_instruction_opcode, cmp1, cmp2, node->branches.opposite, false);
+                              regs.back()[flag_compare]->append_compare_op(node->bin_kind, cmp1, cmp2, node->branches.opposite, false);
                         }
 
                         /* Automatically emit parenthesis for condition emitter. */
-                        if ((node->has_expr(luramas::ast::element_kinds::condition_emit_next))) {
+                        if ((node->has_elem(luramas::ast::element_kinds::condition_emit_next))) {
                               next_condition->append_compare_open<true>();
                               next_condition->append_compare_close();
                         }
@@ -1533,12 +1467,12 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     switch (expr.first) {
 
                                           case luramas::ast::element_kinds::condition_and: {
-                                                regs.back()[flag_compare]->append_compare_operator<luramas::ir::data::constant::logical_operations_kinds::and_>();
+                                                regs.back()[flag_compare]->append_compare_operator<luramas::ast::bin_kinds::and_>();
                                                 break;
                                           }
 
                                           case luramas::ast::element_kinds::condition_or: {
-                                                regs.back()[flag_compare]->append_compare_operator<luramas::ir::data::constant::logical_operations_kinds::or_>();
+                                                regs.back()[flag_compare]->append_compare_operator<luramas::ast::bin_kinds::or_>();
                                                 break;
                                           }
 
@@ -1559,9 +1493,9 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         }
 
                         /* Emit conditional */
-                        if (node->has_expr(luramas::ast::element_kinds::conditional)) {
+                        if (node->has_elem(luramas::ast::element_kinds::desc_dest_mutate_condition_flag)) {
 
-                              const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg];
+                              const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::compare>().front()->dis.reg];
 
                               /* Vararg */
                               if (dest->type == registers::type::var || dest->type == registers::type::arg) {
@@ -1572,7 +1506,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                               } else {
 
                                     /* Create var */
-                                    if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                                    if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                           dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1588,6 +1522,85 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                               regs.back()[flag_compare]->clear();
                         }
+
+                        break;
+                  }
+
+                  /* Setif */
+                  case luramas::il::arch::opcodes::OP_SETIF:
+                  case luramas::il::arch::opcodes::OP_SETIFNOT:
+                  case luramas::il::arch::opcodes::OP_SETIFEQUAL:
+                  case luramas::il::arch::opcodes::OP_SETIFNOTEQUAL:
+                  case luramas::il::arch::opcodes::OP_SETIFLESS:
+                  case luramas::il::arch::opcodes::OP_SETIFLESSEQUAL:
+                  case luramas::il::arch::opcodes::OP_SETIFGREATER:
+                  case luramas::il::arch::opcodes::OP_SETIFGREATEREQUAL: {
+
+                        /* Get compare */
+                        const auto cmp = regs.back()[flag_cmp]->flag.cmp;
+                        const auto cmp1 = cmp.cmp1;
+                        const auto cmp2 = cmp.cmp2;
+
+                        /* See post-condition expr. */
+                        for (const auto &expr : node->expr) {
+
+                              for (auto i = 0u; i < expr.second; ++i)
+                                    switch (expr.first) {
+
+                                          case luramas::ast::element_kinds::condition_and: {
+                                                regs.back()[flag_compare]->append_compare_operator<luramas::ast::bin_kinds::and_>();
+                                                break;
+                                          }
+
+                                          case luramas::ast::element_kinds::condition_or: {
+                                                regs.back()[flag_compare]->append_compare_operator<luramas::ast::bin_kinds::or_>();
+                                                break;
+                                          }
+
+                                          case luramas::ast::element_kinds::condition_end_scope: {
+                                                regs.back()[flag_compare]->append_compare_close();
+                                                break;
+                                          }
+
+                                          case luramas::ast::element_kinds::condition_start_scope_post: {
+                                                regs.back()[flag_compare]->append_compare_open();
+                                                break;
+                                          }
+
+                                          default: {
+                                                break;
+                                          }
+                                    }
+                        }
+
+                        regs.back()[flag_compare]->data->emitter_logical_compare(node->bin_kind, cmp1, cmp2);
+
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+
+                        /* Vararg */
+                        if (dest->type == registers::type::var || dest->type == registers::type::arg) {
+
+                              lines()->set<luramas::ir::data::kinds::statement>(scope_id);
+                              lines.back()->statement.set(dest->data, regs.back()[flag_compare]->data);
+
+                        } else {
+
+                              /* Create var */
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
+
+                                    dest->set_datatype_var<registers::type::var>(node->variables.name);
+
+                                    lines()->set<luramas::ir::data::kinds::statement>(scope_id);
+                                    lines.back()->statement.set<true>(nullptr, regs.back()[flag_compare]->data, node->variables.name);
+
+                              } else {
+
+                                    /* General purpose */
+                                    dest->set<registers::type::expr, true>(regs.back()[flag_compare]->data);
+                              }
+                        }
+
+                        regs.back()[flag_compare]->new_();
 
                         break;
                   }
@@ -1639,7 +1652,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   case luramas::il::arch::opcodes::OP_ORN: {
 
                         /* All arith instruction have a dest register. */
-                        const auto dest_r = node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
+                        const auto dest_r = node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
                         const auto dest = regs.back()[dest_r];
 
                         const auto operands = type_handler::arith_operands(current_instruction_opcode, node, ast->il->kval, regs.back());
@@ -1653,7 +1666,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         if (dest->type == registers::type::var || dest->type == registers::type::arg) {
 
                               /* Convert too arith assignment? */
-                              if ((node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::source>() && dest_r == node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg) && !optimizations->assignment.disable_arith_assignment &&
+                              if ((node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::source>() && dest_r == node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg) && !optimizations->assignment.disable_arith_assignment &&
                                   luramas::emitter_ir::common::supported_arith_assignment(ast->syntax, node->bin_kind)) {
 
                                     lines()->set<luramas::ir::data::kinds::statement>(scope_id);
@@ -1667,7 +1680,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1687,8 +1700,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   /* Getimport, Call, Namecall */
                   case luramas::il::arch::opcodes::OP_GETTABUPVALUE: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto kval = node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue_embeded>().front()->k_value;
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto kval = node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue_embeded>().front()->k_value;
                         auto data = luramas::ir::ir_expr_data::make_expression::datatype_kval(kval);
 
                         logical_expression_dest(node, regs, data);
@@ -1702,7 +1715,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1759,7 +1772,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         /* Return has multiple returns fill. */
                         if (retn > 1) {
 
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     lines()->set<luramas::ir::data::kinds::statement>(scope_id);
 
@@ -1790,7 +1803,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1808,9 +1821,9 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   }
                   case luramas::il::arch::opcodes::OP_SELF: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto source = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
-                        auto kvalue = ast->il->kval[node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx];
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto source = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
+                        auto kvalue = ast->il->kval[node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx];
 
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
                         data->emitter_self(source, luramas::ir::ir_expr_data::make_expression::datatype_kval(kvalue->str()));
@@ -1826,7 +1839,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1848,8 +1861,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                         std::string source = "";
 
-                        const auto sources = node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>();
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto sources = node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>();
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
 
                         const auto start = sources.front()->dis.reg;
                         const auto end = sources.back()->dis.reg;
@@ -1872,7 +1885,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1890,9 +1903,9 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   }
                   case luramas::il::arch::opcodes::OP_RETURN: {
 
-                        auto val = node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+                        auto val = node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
                         const auto original_val = val;
-                        const auto dest = node->lex->operand_expr<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
+                        const auto dest = node->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
 
                         /* If its not main closure then write a return. */
                         if (ast->closure_kind != luramas::ast::closure_kinds::main || ast->body->has_next_inst<luramas::il::arch::opcodes::OP_RETURN>(node->address) /* Has next return. */) { /* Skip op */
@@ -1902,7 +1915,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                                     continue;
                               }
 
-                              lines()->set<luramas::ir::data::kinds::expression, true>(scope_id);
+                              lines()->set<luramas::ir::data::kinds::expression>(scope_id, luramas::ir::ir_expr_data::make::expression_data());
                               lines.back()->expression->constant = luramas::ir::data::constant::constant_kinds::return_;
 
                               /* Check to make sure if last dest reg is current dest reg and was multret if so just one return format. */
@@ -1921,20 +1934,20 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   /* Set/Get global */
                   case luramas::il::arch::opcodes::OP_SETGLOBAL: {
 
-                        const auto source = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
-                        const auto dest = node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
-                      
+                        const auto source = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
+                        const auto dest = node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
+
                         auto dest_data = luramas::ir::ir_expr_data::make::expression_data();
                         dest_data->emitter_datatype_global(dest);
 
                         /* Multret call */
-                        if (node->has_expr(luramas::ast::element_kinds::call_multret_start) || node->has_expr(luramas::ast::element_kinds::call_multret_member) || node->has_expr(luramas::ast::element_kinds::call_multret_end)) {
+                        if (node->has_elem(luramas::ast::element_kinds::call_multret_start) || node->has_elem(luramas::ast::element_kinds::call_multret_member) || node->has_elem(luramas::ast::element_kinds::call_multret_end)) {
 
                               auto mul = regs.back()[flag_multret];
 
                               mul->flag.multret.exprs.emplace_back(dest_data);
 
-                              if (node->has_expr(luramas::ast::element_kinds::call_multret_end)) {
+                              if (node->has_elem(luramas::ast::element_kinds::call_multret_end)) {
 
                                     lines()->set<luramas::ir::data::kinds::statement>(scope_id);
                                     lines.back()->statement.set(mul->flag.multret.exprs, mul->sub_data);
@@ -1952,8 +1965,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   }
                   case luramas::il::arch::opcodes::OP_LOADGLOBAL: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        auto source = node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        auto source = node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->k_value;
 
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
                         data->emitter_datatype_global(source);
@@ -1969,7 +1982,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -1986,22 +1999,22 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         break;
                   }
 
-                        /* Set/Get/Close upvalue */
+                  /* Set/Get/Close upvalue */
                   case luramas::il::arch::opcodes::OP_SETUPVALUE: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
-                        const auto upvalue = ast->upvalues[node->lex->operand_expr<luramas::il::lexer::operand_kinds::upvalue>().front()->dis.upvalue_idx].first;
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
+                        const auto upvalue = ast->upvalues[node->lex->operand_kind<luramas::il::lexer::operand_kinds::upvalue>().front()->dis.upvalue_idx].first;
 
                         auto dest_data = luramas::ir::ir_expr_data::make::expression_data();
                         dest_data->emitter_datatype_upvalue(upvalue);
 
                         /* Multret call */
-                        if (node->has_expr(luramas::ast::element_kinds::call_multret_start) || node->has_expr(luramas::ast::element_kinds::call_multret_member) || node->has_expr(luramas::ast::element_kinds::call_multret_end)) {
+                        if (node->has_elem(luramas::ast::element_kinds::call_multret_start) || node->has_elem(luramas::ast::element_kinds::call_multret_member) || node->has_elem(luramas::ast::element_kinds::call_multret_end)) {
 
                               auto mul = regs.back()[flag_multret];
                               mul->flag.multret.exprs.emplace_back(dest_data);
 
-                              if (node->has_expr(luramas::ast::element_kinds::call_multret_end)) {
+                              if (node->has_elem(luramas::ast::element_kinds::call_multret_end)) {
 
                                     lines()->set<luramas::ir::data::kinds::statement>(scope_id);
                                     lines.back()->statement.set(mul->flag.multret.exprs, mul->sub_data);
@@ -2019,8 +2032,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   }
                   case luramas::il::arch::opcodes::OP_GETUPVALUE: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        auto source = ast->upvalues[node->lex->operand_expr<luramas::il::lexer::operand_kinds::upvalue>().front()->dis.upvalue_idx].first;
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        auto source = ast->upvalues[node->lex->operand_kind<luramas::il::lexer::operand_kinds::upvalue>().front()->dis.upvalue_idx].first;
 
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
                         data->emitter_datatype_upvalue(source);
@@ -2036,7 +2049,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -2054,7 +2067,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   }
                   case luramas::il::arch::opcodes::OP_DESTROYUPVALUESA: {
 
-                        const auto reg = node->lex->operand_expr<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
+                        const auto reg = node->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
 
                         for (const auto &i : ast->closures)
                               for (const auto &upv : i->upvalues)
@@ -2085,11 +2098,11 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         std::shared_ptr<luramas::ast::ast> closure_ast = nullptr;
 
                         /* Get idx */
-                        if (node->lex->has_operand_expr<luramas::il::lexer::operand_kinds::kvalue>()) {
+                        if (node->lex->has_operand_kind<luramas::il::lexer::operand_kinds::kvalue>()) {
                               /* FIX ME */
-                              //closure_ast = ast->il->kval[node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->kvalue_idx]->closure.closure;
+                              //closure_ast = ast->il->kval[node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->kvalue_idx]->closure.closure;
                         } else {
-                              closure_ast = ast->closures[node->lex->operand_expr<luramas::il::lexer::operand_kinds::closure>().front()->dis.closure_idx];
+                              closure_ast = ast->closures[node->lex->operand_kind<luramas::il::lexer::operand_kinds::closure>().front()->dis.closure_idx];
                         }
 
                         /* Compile args */
@@ -2108,7 +2121,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                                     /* Data expr */
                                     data->emitter_constant_function<luramas::ir::data::constant::function_kinds::global>(closure_ast->closure_ir.get(), closure_ast->closure_name);
-                                    regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg]->set<registers::type::expr, true>(closure_ast->closure_name);
+                                    regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg]->set<registers::type::expr, true>(closure_ast->closure_name);
 
                                     break;
                               }
@@ -2117,7 +2130,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                                     /* Data expr */
                                     data->emitter_constant_function<luramas::ir::data::constant::function_kinds::anonymous>(closure_ast->closure_ir.get());
-                                    regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg]->set<registers::type::expr, true>(data);
+                                    regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg]->set<registers::type::expr, true>(data);
 
                                     break;
                               }
@@ -2130,7 +2143,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                                     /* Data expr */
                                     data->emitter_constant_function<luramas::ir::data::constant::function_kinds::scoped>(closure_ast->closure_ir.get(), closure_ast->closure_name);
-                                    regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg]->set<registers::type::var, true>(closure_ast->closure_name);
+                                    regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg]->set<registers::type::var, true>(closure_ast->closure_name);
 
                                     break;
                               }
@@ -2146,8 +2159,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   /* Getvarargs */
                   case luramas::il::arch::opcodes::OP_GETVARARGS: {
 
-                        auto val = node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
-                        const auto start = node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
+                        auto val = node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+                        const auto start = node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg;
 
                         const auto vararg = luramas::emitter_ir::common::locvar::make_locvar_alphabetical_name(config->vararg_prefix, suffixes::iterator_prefix_suffix++, config->vararg_suffix_char);
 
@@ -2175,7 +2188,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                               } else {
 
                                     /* Create var */
-                                    if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                                    if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                           dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -2205,12 +2218,12 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   /* Table get index by ??. */
                   case luramas::il::arch::opcodes::OP_GETTABLEN: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto table = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto table = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
 
-                        const auto idx = node->lex->operand_expr<luramas::il::lexer::operand_kinds::table_idx>().front()->dis.val;
+                        const auto idx = node->lex->operand_kind<luramas::il::lexer::operand_kinds::table_idx>().front()->dis.val;
                         auto idx_data = luramas::ir::ir_expr_data::make::expression_data();
-                        idx_data->emitter_datatype_integer(idx);
+                        idx_data->emitter_datatype_integer(static_cast<double>(idx));
 
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
                         data->emitter_expr_table_idx(table, idx_data);
@@ -2226,7 +2239,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var. */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -2244,10 +2257,10 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   }
                   case luramas::il::arch::opcodes::OP_GETTABLEK: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto table = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto table = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
 
-                        auto idx = ast->il->kval[node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx]->str();
+                        auto idx = ast->il->kval[node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx]->str();
                         auto idx_data = luramas::ir::ir_expr_data::make::expression_data();
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
 
@@ -2276,7 +2289,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -2294,9 +2307,9 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   }
                   case luramas::il::arch::opcodes::OP_GETTABLE: {
 
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto table = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
-                        const auto idx = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::table_reg>().front()->dis.reg]->data;
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto table = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg]->data;
+                        const auto idx = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::table_reg>().front()->dis.reg]->data;
 
                         auto data = luramas::ir::ir_expr_data::make::expression_data();
                         data->emitter_expr_table_idx(table, idx);
@@ -2312,7 +2325,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -2333,8 +2346,8 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   case luramas::il::arch::opcodes::OP_SETTABLEK:
                   case luramas::il::arch::opcodes::OP_SETTABLE: {
 
-                        const auto value = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
-                        auto table = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg];
+                        const auto value = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg];
+                        auto table = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg];
                         bool legal = false;
 
                         auto idx = luramas::ir::ir_expr_data::make::expression_data();
@@ -2345,7 +2358,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                               case luramas::il::arch::opcodes::OP_SETTABLEK: {
 
-                                    auto idx_kv = ast->il->kval[node->lex->operand_expr<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx];
+                                    auto idx_kv = ast->il->kval[node->lex->operand_kind<luramas::il::lexer::operand_kinds::kvalue>().front()->dis.kvalue_idx];
 
                                     legal = idx_kv->type == luramas::il::arch::kval_kinds::string || idx_kv->type == luramas::il::arch::kval_kinds::integer;
 
@@ -2355,12 +2368,12 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                               }
 
                               case luramas::il::arch::opcodes::OP_SETTABLEN: {
-                                    idx->emitter_datatype_integer(node->lex->operand_expr<luramas::il::lexer::operand_kinds::table_idx>().front()->dis.val);
+                                    idx->emitter_datatype_integer(static_cast<double>(node->lex->operand_kind<luramas::il::lexer::operand_kinds::table_idx>().front()->dis.val));
                                     break;
                               }
 
                               case luramas::il::arch::opcodes::OP_SETTABLE: {
-                                    idx = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::table_reg>().front()->dis.reg]->data;
+                                    idx = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::table_reg>().front()->dis.reg]->data;
                                     break;
                               }
 
@@ -2370,7 +2383,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         }
 
                         /* Non-element */
-                        if (!node->has_expr(luramas::ast::element_kinds::table_element)) {
+                        if (!node->has_elem(luramas::ast::element_kinds::table_element)) {
 
                               if (legal) {
                                     data->emitter_expr_table_idx(table->data, idx);
@@ -2380,12 +2393,12 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         }
 
                         /* Multret call */
-                        if (node->has_expr(luramas::ast::element_kinds::call_multret_start) || node->has_expr(luramas::ast::element_kinds::call_multret_member) || node->has_expr(luramas::ast::element_kinds::call_multret_end)) {
+                        if (node->has_elem(luramas::ast::element_kinds::call_multret_start) || node->has_elem(luramas::ast::element_kinds::call_multret_member) || node->has_elem(luramas::ast::element_kinds::call_multret_end)) {
 
                               auto mul = regs.back()[flag_multret];
                               mul->flag.multret.exprs.emplace_back(data);
 
-                              if (node->has_expr(luramas::ast::element_kinds::call_multret_end)) {
+                              if (node->has_elem(luramas::ast::element_kinds::call_multret_end)) {
 
                                     lines()->set<luramas::ir::data::kinds::statement>(scope_id);
                                     lines.back()->statement.set(mul->flag.multret.exprs, mul->sub_data);
@@ -2397,14 +2410,14 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         }
 
                         /* Element */
-                        if (node->has_expr(luramas::ast::element_kinds::table_element)) {
+                        if (node->has_elem(luramas::ast::element_kinds::table_element)) {
 
                               data->emitter_expr_table_member(value->data, idx);
 
                               table->sub_data->emitter_expr_table_member(value->data, idx);
 
                               /* Not a table end so add end. */
-                              const auto table_ends = node->count_expr<luramas::ast::element_kinds::table_end>();
+                              const auto table_ends = node->count_elem<luramas::ast::element_kinds::table_end>();
                               for (auto i = 0u; i < table_ends; ++i)
                                     table->sub_data->emitter_expr_table_end();
 
@@ -2427,7 +2440,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                               } else {
 
                                     /* Create var */
-                                    if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                                    if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                           table->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -2456,10 +2469,10 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   case luramas::il::arch::opcodes::OP_NEWTABLEA: {
 
                         /* Table is already created before hand just decide like locvar or something. */
-                        auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
 
                         /* Fix table ends */
-                        const auto table_ends = node->count_expr<luramas::ast::element_kinds::table_end>();
+                        const auto table_ends = node->count_elem<luramas::ast::element_kinds::table_end>();
                         for (auto i = 0u; i < table_ends; ++i)
                               dest->sub_data->emitter_expr_table_end();
 
@@ -2477,7 +2490,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -2496,10 +2509,10 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   case luramas::il::arch::opcodes::OP_SETLIST: {
 
                         /* Table is already created before hand just decide like locvar or something. */
-                        const auto dest = regs.back()[node->lex->operand_expr<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
-                        const auto start = node->lex->operand_expr<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
-                        const auto end = node->count_expr<luramas::ast::element_kinds::table_end>();
-                        auto amt = node->lex->operand_expr<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
+                        const auto dest = regs.back()[node->lex->operand_kind<luramas::il::lexer::operand_kinds::dest>().front()->dis.reg];
+                        const auto start = node->lex->operand_kind<luramas::il::lexer::operand_kinds::source>().front()->dis.reg;
+                        const auto end = node->count_elem<luramas::ast::element_kinds::table_end>();
+                        auto amt = node->lex->operand_kind<luramas::il::lexer::operand_kinds::value>().front()->dis.val;
 
                         regs.back()[flag_table]->special.inside_expr -= end;
 
@@ -2523,7 +2536,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                         } else {
 
                               /* Create var */
-                              if (node->has_expr(luramas::ast::element_kinds::locvar)) {
+                              if (node->has_elem(luramas::ast::element_kinds::stat_locvar)) {
 
                                     dest->set_datatype_var<registers::type::var>(node->variables.name);
 
@@ -2542,7 +2555,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
 
                   case luramas::il::arch::opcodes::OP_POPARG: {
 
-                        const auto reg = node->lex->operand_expr<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
+                        const auto reg = node->lex->operand_kind<luramas::il::lexer::operand_kinds::reg>().front()->dis.reg;
                         regs.back()[flag_pop]->special.registers.emplace_back(reg);
 
                         break;
@@ -2552,7 +2565,7 @@ void lift_blocks(const std::shared_ptr<luramas::ast::ast> &ast, const std::share
                   }
             }
 
-            if (node->has_expr(luramas::ast::element_kinds::exit_post)) {
+            if (node->has_elem(luramas::ast::element_kinds::desc_exit_post)) {
                   return;
             }
       }
@@ -2565,7 +2578,7 @@ void lift_ast(const std::shared_ptr<luramas::ast::ast> &main_ast, const std::sha
       registers::reg_scope main_scope;
       std::vector<registers::reg_scope> scopes = {main_scope};
 
-      /* Set args for registers. */
+      /* Init registers. */
       auto reg = 0u;
       for (const auto &arg : main_ast->arg_regs) {
             if (arg.first != -1 /* vararg */) {
@@ -2574,7 +2587,6 @@ void lift_ast(const std::shared_ptr<luramas::ast::ast> &main_ast, const std::sha
       }
 
       lift_blocks(main_ast, config, format, optimizations, scopes, lines);
-
       return;
 }
 
@@ -2611,11 +2623,11 @@ luramas::ir::lines luramas::ir::lifter::lift(const std::shared_ptr<luramas::ast:
       }
 
       /* Lift by each. */
-      std::vector<std::shared_ptr<luramas::ast::ast>> comleted;
+      std::vector<std::shared_ptr<luramas::ast::ast>> completed;
 
       /* First do ones with no closures. */
       for (const auto &i : linear)
-            if (i.second.empty() && std::find(comleted.begin(), comleted.end(), i.first) == comleted.end()) {
+            if (i.second.empty() && std::find(completed.begin(), completed.end(), i.first) == completed.end()) {
 
                   luramas::ir::lines lines;
 
@@ -2623,7 +2635,7 @@ luramas::ir::lines luramas::ir::lifter::lift(const std::shared_ptr<luramas::ast:
                   lift_ast(i.first, config, format, optimizations, i.first->closure_ir);
 
                   /* Add to complete. */
-                  comleted.emplace_back(i.first);
+                  completed.emplace_back(i.first);
                   linear.erase(i.first);
 
                   if (linear.empty()) {
@@ -2635,12 +2647,12 @@ luramas::ir::lines luramas::ir::lifter::lift(const std::shared_ptr<luramas::ast:
       while (!linear.empty()) {
 
             for (const auto &i : linear)
-                  if (std::find(comleted.begin(), comleted.end(), i.first) == comleted.end()) {
+                  if (std::find(completed.begin(), completed.end(), i.first) == completed.end()) {
 
                         /* Check if all closures have been analyzed. */
                         auto all = true;
                         for (const auto &p : i.second)
-                              if (std::find(comleted.begin(), comleted.end(), p) == comleted.end()) {
+                              if (std::find(completed.begin(), completed.end(), p) == completed.end()) {
                                     all = false;
                                     break;
                               }
@@ -2652,7 +2664,7 @@ luramas::ir::lines luramas::ir::lifter::lift(const std::shared_ptr<luramas::ast:
                         lift_ast(i.first, config, format, optimizations, i.first->closure_ir);
 
                         /* Add to complete. */
-                        comleted.emplace_back(i.first);
+                        completed.emplace_back(i.first);
                         linear.erase(i.first);
 
                   } else {

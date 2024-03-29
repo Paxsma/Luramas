@@ -375,7 +375,7 @@ void set_data(std::shared_ptr<lua_53_6_disassembler::disassembly> &buffer, const
 
                                     buffer->total += operand_value;
 
-                                    const auto kv = p->k[operand_value - 1u];                        
+                                    const auto kv = p->k[operand_value - 1u];
                                     current_operand->k_value_type = kv.tt_;
 
                                     switch (current_operand->k_value_type) {
@@ -413,7 +413,7 @@ void set_data(std::shared_ptr<lua_53_6_disassembler::disassembly> &buffer, const
 
                                                 if (type == op_table::type::k_idx_pp) {
 
-                                                      for (auto i = 0u; i < p->sizep; i++)
+                                                      for (auto i = 0; i < p->sizep; i++)
                                                             if (p->p[i] == gco2cl(kv.value_.gc)->l.p) {
                                                                   operand_value = i;
                                                                   break;

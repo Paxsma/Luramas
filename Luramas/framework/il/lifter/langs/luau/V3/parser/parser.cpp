@@ -5,7 +5,6 @@
 
 #if luramas_target == luramas_target_luau_v3
 
-/* Parse compare instruction. */
 void luau_v3_parsers::parse_compares(luramas::il::lifter::parser::parser_manager<luau_v3_disassembler::disassembly> &pm) {
 
       for (auto i = 0u; i < pm.dism.size(); ++i) {
@@ -97,7 +96,7 @@ void luau_v3_parsers::parse_compares(luramas::il::lifter::parser::parser_manager
                               pm.remove(i + 2u);
                         } else {
                               ptr = std::make_shared<luramas::il::disassembly>();
-                              ptr->ref = pm.il->visit_addr(curr->operands.back()->ref_addr);
+                              ptr->ref = pm.il->visit_addr(curr->operands[1u]->ref_addr);
                               luramas::il::emitter::emit_opcode<luramas::il::arch::opcodes::OP_JUMPIFLESSEQUAL>(pm.il, curr->addr, ptr, ptr->ref->addr);
                               pm.append(i, ptr);
                         }
@@ -119,7 +118,7 @@ void luau_v3_parsers::parse_compares(luramas::il::lifter::parser::parser_manager
                               pm.remove(i + 2u);
                         } else {
                               ptr = std::make_shared<luramas::il::disassembly>();
-                              ptr->ref = pm.il->visit_addr(curr->operands.back()->ref_addr);
+                              ptr->ref = pm.il->visit_addr(curr->operands[1u]->ref_addr);
                               luramas::il::emitter::emit_opcode<luramas::il::arch::opcodes::OP_JUMPIFLESS>(pm.il, curr->addr, ptr, ptr->ref->addr);
                               pm.append(i, ptr);
                         }
@@ -141,7 +140,7 @@ void luau_v3_parsers::parse_compares(luramas::il::lifter::parser::parser_manager
                               pm.remove(i + 2u);
                         } else {
                               ptr = std::make_shared<luramas::il::disassembly>();
-                              ptr->ref = pm.il->visit_addr(curr->operands.back()->ref_addr);
+                              ptr->ref = pm.il->visit_addr(curr->operands[1u]->ref_addr);
                               luramas::il::emitter::emit_opcode<luramas::il::arch::opcodes::OP_JUMPIFNOTEQUAL>(pm.il, curr->addr, ptr, ptr->ref->addr);
                               pm.append(i, ptr);
                         }
@@ -163,7 +162,7 @@ void luau_v3_parsers::parse_compares(luramas::il::lifter::parser::parser_manager
                               pm.remove(i + 2u);
                         } else {
                               ptr = std::make_shared<luramas::il::disassembly>();
-                              ptr->ref = pm.il->visit_addr(curr->operands.back()->ref_addr);
+                              ptr->ref = pm.il->visit_addr(curr->operands[1u]->ref_addr);
                               luramas::il::emitter::emit_opcode<luramas::il::arch::opcodes::OP_JUMPIFGREATEREQUAL>(pm.il, curr->addr, ptr, ptr->ref->addr);
                               pm.append(i, ptr);
                         }
@@ -185,7 +184,7 @@ void luau_v3_parsers::parse_compares(luramas::il::lifter::parser::parser_manager
                               pm.remove(i + 2u);
                         } else {
                               ptr = std::make_shared<luramas::il::disassembly>();
-                              ptr->ref = pm.il->visit_addr(curr->operands.back()->ref_addr);
+                              ptr->ref = pm.il->visit_addr(curr->operands[1u]->ref_addr);
                               luramas::il::emitter::emit_opcode<luramas::il::arch::opcodes::OP_JUMPIFGREATER>(pm.il, curr->addr, ptr, ptr->ref->addr);
                               pm.append(i, ptr);
                         }
@@ -202,7 +201,6 @@ void luau_v3_parsers::parse_compares(luramas::il::lifter::parser::parser_manager
       return;
 }
 
-/* Inits parser, does not remove or add any new instructions, everything is alligned.*/
 void luau_v3_parsers::parse_instructions(luramas::il::lifter::parser::parser_manager<luau_v3_disassembler::disassembly> &pm) {
 
       std::uint16_t stack_top = 0u;
@@ -471,7 +469,7 @@ void luau_v3_parsers::parse_instructions(luramas::il::lifter::parser::parser_man
                         break;
                   }
                   case LuauOpcode::LOP_PREPVARARGS: {
-                        op = luramas::il::arch::opcodes::OP_INITVARARGS;
+                        op = luramas::il::arch::opcodes::OP_RESUME;
                         break;
                   }
 
@@ -613,7 +611,7 @@ void luau_v3_parsers::parse_instructions(luramas::il::lifter::parser::parser_man
                         case op_table::type::integer: {
 
                               operand_ptr->type = luramas::il::arch::operand::operand_kind::integer;
-                              operand_ptr->dis.integer = oper->val;
+                              operand_ptr->dis.integer = static_cast<double>(oper->val);
 
                               /* String and remove trailing 0's */
                               operand_ptr->integer_str = std::to_string(operand_ptr->dis.integer);
@@ -685,5 +683,17 @@ void luau_v3_parsers::parse_instructions(luramas::il::lifter::parser::parser_man
 
       return;
 };
+
+void luau_v3_parsers::parse_jumps(luramas::il::lifter::parser::parser_manager<luau_v3_disassembler::disassembly> &pm) {
+
+      for (const auto &i : pm.il->dis)
+            for (const auto &o : i->operands)
+                  if (o->type == luramas::il::arch::operand::operand_kind::jmp) {
+                        i->ref = pm.il->visit_addr(o->ref_addr);
+                        break;
+                  }
+
+      return;
+}
 
 #endif
